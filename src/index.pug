@@ -1,0 +1,27 @@
+html
+head
+  meta(charset="UTF-8")
+  title=title
+  link(rel="stylesheet", type="text/css", href=fontStylesheet)
+  script(src="js/phaser.min.js")
+  script(src="js/states/Boot.js")
+  script(src="js/states/Preloader.js")
+  script(src="js/states/MainMenu.js")
+  script(src="js/engines/VisualNovelWrapper.js")
+  script(src="js/overlays/VisualNovel.js")
+body(style="margin:0;width:100%;height:100%;")
+  div(class="fontLoader") required to load fonts
+  div(id="gameContainer" style="margin:0;width:100%;height: 100%;")
+  script(type="text/javascript").
+    window.onload = function() {
+      var game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.WEBGL, 'gameContainer', null, null, false);
+
+      game.state.add('Boot', Dismae.Boot);
+      game.state.add('Preloader', Dismae.Preloader);
+      game.state.add('MainMenu', Dismae.MainMenu);
+      game.state.add('Game', Dismae.Game);
+      game.state.add('VisualNovel', Dismae.VisualNovel);
+      game.state.add('VisualNovelWrapper', Dismae.VisualNovelWrapper);
+
+      game.state.start('Boot');
+    };

@@ -1,0 +1,28 @@
+{
+  "name": "dismae",
+  "version": "0.0.1",
+  "description": "Game engine built with Phaser.io and Electron.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dischan/dismae.git"
+  },
+  "author": "Dischan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Dischan/dismae/issues"
+  },
+  "homepage": "https://github.com/Dischan/dismae#readme",
+  "dependencies": {
+    "electron-prebuilt": "^0.37.5",
+    "phaser": "^2.4.6"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "pug": "^0.1.0",
+    "rimraf": "^2.5.2"
+  }
+}
