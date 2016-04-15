@@ -17,6 +17,8 @@ Dismae.Preloader.prototype = {
     this.load.image('titlepage', 'assets/images/ui/main_menu/main_menu.jpg');
     this.load.atlas('playButton', 'assets/images/ui/main_menu/play_button.png', 'assets/images/ui/main_menu/play_button.json');
     this.load.audio('titleMusic', ['assets/sounds/music/main_menu.mp3']);
+
+    this.load.json('settings', 'assets.json');
   },
 
   create: function () {

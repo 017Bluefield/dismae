@@ -30,19 +30,29 @@ module.exports =  function(config) {
     gulp.src(`${__dirname}/node_modules/phaser/build/phaser.min.js`)
     .pipe(gulp.dest('build/js/'));
 
-    var index = fs.readFileSync(`${__dirname}/src/index.pug`, 'utf8');
-    index = pug.compile(index, {pretty: true});
-    index = index(config);
-    fs.writeFileSync('build/index.html', index, 'utf8');
+    buildAssetFile(function(assets){
+      var index = fs.readFileSync(`${__dirname}/src/index.pug`, 'utf8');
+      index = pug.compile(index, {pretty: true});
+      index = index(resolveConfigPaths(config, assets));
+      fs.writeFileSync('build/index.html', index, 'utf8');
+      callback();
+    });
+  }
 
+  function clean(callback) {
+    rimraf('build', callback);
+  }
+
+  function buildAssetFile(callback){
     var assets = {};
     recursiveReaddir('src/assets', ['.*'], function (err, files) {
       var pathArray;
       var assetName;
       var depth;
       var file;
+
       for(var i = 0; i < files.length; i++) {
-        file = files[i];
+        file = files[i].replace('src/', '');
         pathArray = file.split('/');
         depth = pathArray.length - 1;
         assetName = pathArray[depth];
@@ -52,12 +62,23 @@ module.exports =  function(config) {
         }
         assets[assetName] = file;
       }
+
       fs.writeFileSync('build/assets.json', JSON.stringify(assets, null, '  '), 'utf8');
+
+      callback(assets);
     });
   }
 
-  function clean(callback) {
-    rimraf('build', callback);
+  function resolveConfigPaths(config, assets){
+    for (var key in config) {
+       if (config.hasOwnProperty(key)) {
+          if(assets[config[key]]) {
+            config[key] = assets[config[key]];
+          }
+       }
+    }
+
+    return config;
   }
 
   return {
