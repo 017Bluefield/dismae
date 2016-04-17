@@ -19,9 +19,7 @@
   "dependencies": {
     "electron-prebuilt": "^0.37.5",
     "phaser": "^2.4.6",
-    "recursive-readdir": "^2.0.0"
-  },
-  "devDependencies": {
+    "recursive-readdir": "^2.0.0",
     "gulp": "^3.9.1",
     "pug": "^0.1.0",
     "rimraf": "^2.5.2"
