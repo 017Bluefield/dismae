@@ -27,8 +27,18 @@ module.exports =  function(config) {
     gulp.src(config.gameDir + '/src/**/*.*', {base: config.gameDir + '/src/'})
     .pipe(gulp.dest(config.gameDir + '/build'));
 
-    gulp.src(`${__dirname}/node_modules/phaser/build/phaser.min.js`)
-    .pipe(gulp.dest(config.gameDir + '/build/dismae/phaser'));
+    //dependencies are in a different place if dismae is installed in a module
+    //probably not the best way to handle this, but I couldn't figure out a
+    //better one offhand
+    fs.stat(`${__dirname}/node_modules/phaser/build/phaser.min.js`, function(err, stat) {
+      if(err === null) {
+        gulp.src(`${__dirname}/node_modules/phaser/build/phaser.min.js`)
+        .pipe(gulp.dest(config.gameDir + '/build/dismae/phaser'));
+      } else {
+        gulp.src(`${__dirname}/../phaser/build/phaser.min.js`)
+        .pipe(gulp.dest(config.gameDir + '/build/dismae/phaser'));
+      }
+    });
 
     buildAssetFile(function(assets){
       var index = fs.readFileSync(`${__dirname}/src/index.pug`, 'utf8');
