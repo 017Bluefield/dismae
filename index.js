@@ -13,46 +13,46 @@ module.exports =  function(config) {
   function start() {
     clean(function(){
       build(function(){
-        var child = proc.spawn(electron, [`build/main.js`]);
+        var child = proc.spawn(electron, [`${config.gameDir}/build/main.js`]);
       });
     });
   }
 
   function build(callback) {
-    fs.mkdirSync('build');
+    fs.mkdirSync(config.gameDir + '/build');
 
     gulp.src(`${__dirname}/src/**/*.js`, {base: `${__dirname}/src/`})
-    .pipe(gulp.dest('build'));
+    .pipe(gulp.dest(config.gameDir + '/build'));
 
-    gulp.src('src/**/*.*', {base: 'src/'})
-    .pipe(gulp.dest('build'));
+    gulp.src(config.gameDir + '/src/**/*.*', {base: config.gameDir + '/src/'})
+    .pipe(gulp.dest(config.gameDir + '/build'));
 
     gulp.src(`${__dirname}/node_modules/phaser/build/phaser.min.js`)
-    .pipe(gulp.dest('build/js/'));
+    .pipe(gulp.dest(config.gameDir + '/build/dismae/phaser'));
 
     buildAssetFile(function(assets){
       var index = fs.readFileSync(`${__dirname}/src/index.pug`, 'utf8');
       index = pug.compile(index, {pretty: true});
       index = index(resolveConfigPaths(config, assets));
-      fs.writeFileSync('build/index.html', index, 'utf8');
+      fs.writeFileSync(config.gameDir + '/build/index.html', index, 'utf8');
       callback();
     });
   }
 
   function clean(callback) {
-    rimraf('build', callback);
+    rimraf(config.gameDir + '/build', callback);
   }
 
   function buildAssetFile(callback){
     var assets = {};
-    recursiveReaddir('src/assets', ['.*'], function (err, files) {
+    recursiveReaddir(config.gameDir + '/src/assets', ['.*'], function (err, files) {
       var pathArray;
       var assetName;
       var depth;
       var file;
 
       for(var i = 0; i < files.length; i++) {
-        file = files[i].replace('src/', '');
+        file = files[i].replace(config.gameDir + 'src/', '');
         pathArray = file.split('/');
         depth = pathArray.length - 1;
         assetName = pathArray[depth];
@@ -63,7 +63,7 @@ module.exports =  function(config) {
         assets[assetName] = file;
       }
 
-      fs.writeFileSync('build/assets.json', JSON.stringify(assets, null, '  '), 'utf8');
+      fs.writeFileSync(config.gameDir + '/build/assets.json', JSON.stringify(assets, null, '  '), 'utf8');
 
       callback(assets);
     });
