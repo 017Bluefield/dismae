@@ -1,21 +1,63 @@
+#!/usr/bin/env node
 'use strict';
 
 var gulp = require('gulp');
 var rimraf = require('rimraf');
 var pug = require('pug');
-var electron = require('electron-prebuilt');
 var proc = require('child_process');
 const fs = require('fs');
 var recursiveReaddir = require('recursive-readdir');
+var os = require('os')
+var path = require('path')
+var extract = require('extract-zip')
+var download = require('electron-download')
 
 // spawn electron
 module.exports =  function(config) {
   function start() {
-    clean(function(){
-      build(function(){
-        var child = proc.spawn(electron, [`${config.gameDir}/build/main.js`]);
+    getElectron(function(electron){
+      clean(function(){
+        build(function(){
+          console.log(electron);
+          var child = proc.spawn(electron, [`${config.gameDir}/build/main.js`]);
+        });
       });
     });
+  }
+
+  function getElectron(callback) {
+    try {
+      exists = fs.lstatSync(path.join(__dirname, 'path.txt'));
+      callback(path.join(__dirname, fs.readFileSync(path.join(__dirname, 'path.txt'), 'utf-8')));
+    } catch (e) {
+      installElectron(function() {
+        callback(path.join(__dirname, fs.readFileSync(path.join(__dirname, 'path.txt'), 'utf-8')));
+      });
+    }
+  }
+
+  function installElectron(callback) {
+    var platform = os.platform()
+
+    var paths = {
+      darwin: 'dist/Electron.app/Contents/MacOS/Electron',
+      freebsd: 'dist/electron',
+      linux: 'dist/electron',
+      win32: 'dist/electron.exe'
+    }
+
+    if (!paths[platform]) throw new Error('Unknown platform: ' + platform)
+
+    download({version: '0.37.6', cache: path.join(__dirname, 'cache')}, extractFile)
+
+    // unzips and makes path.txt point at the correct executable
+    function extractFile (err, zipPath) {
+      fs.writeFile(path.join(__dirname, 'path.txt'), paths[platform], function (err) {
+        extract(zipPath, {dir: path.join(__dirname, 'dist')}, function (err) {
+          callback();
+        })
+      })
+    }
   }
 
   function build(callback) {
