@@ -9,16 +9,15 @@ const fs = require('fs');
 var recursiveReaddir = require('recursive-readdir');
 var os = require('os');
 var path = require('path');
-var extract = require('extract-zip');
 var download = require('electron-download');
 
 // spawn electron
 module.exports =  function(config) {
+  var tempDir = path.join(config.gameDir, 'tmp');
   function start() {
     getElectron(function(electron){
       clean(function(){
         build(function(){
-          console.log(electron);
           var child = proc.spawn(electron, [`${config.gameDir}/build/main.js`]);
         });
       });
@@ -26,37 +25,63 @@ module.exports =  function(config) {
   }
 
   function getElectron(callback) {
-    try {
-      exists = fs.lstatSync(path.join(config.gameDir, 'path.txt'));
-      callback(path.join(__dirname, fs.readFileSync(path.join(config.gameDir, 'path.txt'), 'utf-8')));
-    } catch (e) {
-      installElectron(function() {
-        callback(path.join(__dirname, fs.readFileSync(path.join(config.gameDir, 'path.txt'), 'utf-8')));
-      });
-    }
-  }
-
-  function installElectron(callback) {
     var platform = os.platform()
 
     var paths = {
-      darwin: 'dist/Electron.app/Contents/MacOS/Electron',
-      freebsd: 'dist/electron',
-      linux: 'dist/electron',
-      win32: 'dist/electron.exe'
+      darwin: 'electron-darwin/Electron.app/Contents/MacOS/Electron',
+      freebsd: 'electron-freebsd/electron',
+      linux: 'electron-linux/electron',
+      win32: 'electron-win32/electron.exe'
     }
 
     if (!paths[platform]) throw new Error('Unknown platform: ' + platform)
 
-    download({version: '0.37.6', cache: path.join(config.gameDir, 'cache')}, extractFile)
+    try {
+      var exists = fs.lstatSync(path.join(tempDir, paths[platform]));
+      callback(path.join(tempDir, paths[platform]));
+    } catch (e) {
+      installElectron(platform, function() {
+        callback(path.join(tempDir, paths[platform]));
+      });
+    }
+  }
+
+  function installElectron(platform, callback) {
+    download({version: '0.37.6', cache: path.join(tempDir, 'cache')}, extractFile)
 
     // unzips and makes path.txt point at the correct executable
     function extractFile (err, zipPath) {
-      fs.writeFile(path.join(config.gameDir, 'path.txt'), paths[platform], function (err) {
-        extract(zipPath, {dir: path.join(config.gameDir, 'dist')}, function (err) {
+      try {
+        var exists = fs.lstatSync(path.join(tempDir, `electron-${platform}`));
+      } catch (e) {
+        fs.mkdirSync(path.join(tempDir, `electron-${platform}`));
+      }
+
+      if(platform === 'darwin'){
+        proc.execSync('unzip ' + zipPath + ' -d ' + path.join(tempDir, 'electron-darwin'));
+        callback();
+      } else {
+        DecompressZip = require('decompress-zip');
+        unzipper = new DecompressZip(zipPath);
+        unzipper.on('error', callback)
+        unzipper.on('extract', function() {
+          //Make sure atom/electron is executable on Linux
+          if (platform === 'linux') {
+            electronAppPath = path.join(path.join(tempDir, 'electron-linux'), 'electron')
+            if (fs.existsSync(electronAppPath)) {
+              fs.chmodSync(electronAppPath, '755');
+            }
+
+            atomAppPath = path.join(path.join(tempDir, 'electron-linux'), 'atom')
+            if (fs.existsSync(atomAppPath)) {
+              fs.chmodSync(atomAppPath, '755');
+            }
+          }
+
           callback();
-        })
-      })
+        });
+        unzipper.extract({path: path.join(tempDir, `electron-${platform}`)});
+      }
     }
   }
 
