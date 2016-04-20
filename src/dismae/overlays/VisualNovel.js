@@ -81,14 +81,12 @@ Dismae.VisualNovel.prototype = {
   },
 
   preload: function() {
-    this.load.json('settings', 'assets/settings/visualnovel.json');
     this.load.text('intro', 'assets/scripts/' + this.scene + '.script');
     this.load.image('sad_winter', 'assets/images/sprites/sad.png');
   },
 
   create: function () {
     this.script = this.cache.getText(this.scene).split('\n');
-    this.settings = this.cache.getJSON('settings');
 
     this.text = this.add.text(this.world.centerX, this.world.centerY);
     this.text.font = "LiberationSans";
@@ -113,7 +111,7 @@ Dismae.VisualNovel.prototype = {
     //  Create our Timer
     this.timer = this.time.create(false);
 
-    this.timer.loop(this.settings.textSpeed, this.incrementShowCharacterCount, this);
+    this.timer.loop(50, this.incrementShowCharacterCount, this);
 
     //  Start the timer running - this is important!
     //  It won't start automatically, allowing you to hook it to button events and the like.
