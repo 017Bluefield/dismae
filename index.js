@@ -22,9 +22,13 @@ module.exports = class dismae extends EventEmitter {
 
   start() {
     var dismae = this;
+    dismae.emit('update', 'checking dependencies');
     dismae.getElectron(function(electron){
+      dismae.emit('update', 'cleaning');
       dismae.clean(function(){
+        dismae.emit('update', 'building');
         dismae.build(function(){
+          dismae.emit('update', 'starting');
           var child = proc.spawn(electron, [`${dismae.config.gameDir}/build/main.js`]);
         });
       });
@@ -48,6 +52,7 @@ module.exports = class dismae extends EventEmitter {
       var exists = fs.lstatSync(path.join(dismae.tempDir, paths[platform]));
       callback(path.join(dismae.tempDir, paths[platform]));
     } catch (e) {
+      dismae.emit('update', 'downloading files');
       this.installElectron(platform, function() {
         callback(path.join(dismae.tempDir, paths[platform]));
       });
@@ -60,6 +65,7 @@ module.exports = class dismae extends EventEmitter {
 
     // unzips and makes path.txt point at the correct executable
     function extractFile (err, zipPath) {
+      dismae.emit('update', 'extracting files');
       try {
         var exists = fs.lstatSync(path.join(dismae.tempDir, `electron-${platform}`));
       } catch (e) {
