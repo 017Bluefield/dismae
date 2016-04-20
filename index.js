@@ -7,10 +7,10 @@ var pug = require('pug');
 var proc = require('child_process');
 const fs = require('fs');
 var recursiveReaddir = require('recursive-readdir');
-var os = require('os')
-var path = require('path')
-var extract = require('extract-zip')
-var download = require('electron-download')
+var os = require('os');
+var path = require('path');
+var extract = require('extract-zip');
+var download = require('electron-download');
 
 // spawn electron
 module.exports =  function(config) {
@@ -27,11 +27,11 @@ module.exports =  function(config) {
 
   function getElectron(callback) {
     try {
-      exists = fs.lstatSync(path.join(__dirname, 'path.txt'));
-      callback(path.join(__dirname, fs.readFileSync(path.join(__dirname, 'path.txt'), 'utf-8')));
+      exists = fs.lstatSync(path.join(config.gameDir, 'path.txt'));
+      callback(path.join(__dirname, fs.readFileSync(path.join(config.gameDir, 'path.txt'), 'utf-8')));
     } catch (e) {
       installElectron(function() {
-        callback(path.join(__dirname, fs.readFileSync(path.join(__dirname, 'path.txt'), 'utf-8')));
+        callback(path.join(__dirname, fs.readFileSync(path.join(config.gameDir, 'path.txt'), 'utf-8')));
       });
     }
   }
@@ -48,12 +48,12 @@ module.exports =  function(config) {
 
     if (!paths[platform]) throw new Error('Unknown platform: ' + platform)
 
-    download({version: '0.37.6', cache: path.join(__dirname, 'cache')}, extractFile)
+    download({version: '0.37.6', cache: path.join(config.gameDir, 'cache')}, extractFile)
 
     // unzips and makes path.txt point at the correct executable
     function extractFile (err, zipPath) {
-      fs.writeFile(path.join(__dirname, 'path.txt'), paths[platform], function (err) {
-        extract(zipPath, {dir: path.join(__dirname, 'dist')}, function (err) {
+      fs.writeFile(path.join(config.gameDir, 'path.txt'), paths[platform], function (err) {
+        extract(zipPath, {dir: path.join(config.gameDir, 'dist')}, function (err) {
           callback();
         })
       })
