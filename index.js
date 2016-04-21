@@ -55,7 +55,7 @@ module.exports = class dismae extends EventEmitter {
       var exists = fs.lstatSync(path.join(dismae.tempDir, paths[platform]));
       callback(path.join(dismae.tempDir, paths[platform]));
     } catch (e) {
-      dismae.emit('update', 'downloading files');
+      dismae.emit('update', 'downloading dependencies');
       this.installElectron(platform, function() {
         callback(path.join(dismae.tempDir, paths[platform]));
       });
