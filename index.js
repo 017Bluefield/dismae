@@ -30,6 +30,9 @@ module.exports = class dismae extends EventEmitter {
         dismae.build(function(){
           dismae.emit('update', 'starting');
           var child = proc.spawn(electron, [`${dismae.config.gameDir}/build/main.js`]);
+          child.on('close', function(code) {
+            dismae.emit('update', 'closed');
+          });
         });
       });
     });
