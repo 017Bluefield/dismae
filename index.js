@@ -29,7 +29,8 @@ module.exports = class dismae extends EventEmitter {
         dismae.emit('update', 'building');
         dismae.build(function(){
           dismae.emit('update', 'starting');
-          var child = proc.spawn(electron, [`${dismae.config.gameDir}/build/main.js`]);
+          var mainjs = path.join(dismae.config.gameDir, 'build', 'main.js');
+          var child = proc.spawn(electron, [mainjs]);
           child.on('close', function(code) {
             dismae.emit('update', 'closed');
           });
@@ -126,7 +127,7 @@ module.exports = class dismae extends EventEmitter {
         }
         callback();
       } else if (platform === 'win32') {
-        proc.execFileSync(path.join(__dirname, 'bin', '7zip', '7za.exe'), ['x ' + zipPath, '-o' + path.join(dismae.tempDir, 'electron-win32')]);
+        proc.execFileSync(path.join(__dirname, 'bin', '7zip', '7za.exe'), ['x', zipPath, '-o' + path.join(dismae.tempDir, 'electron-win32')], {stdio: 'ignore'});
         callback();
       }
     }
@@ -134,62 +135,62 @@ module.exports = class dismae extends EventEmitter {
 
   build(callback) {
     let dismae = this;
-    fs.mkdirSync(this.config.gameDir + '/build');
+    fs.mkdirSync(path.join(this.config.gameDir, 'build'));
 
-    gulp.src(`${__dirname}/src/**/*.js`, {base: `${__dirname}/src/`})
-    .pipe(gulp.dest(this.config.gameDir + '/build'));
+    gulp.src(path.join(__dirname, 'src', '**', '*.js'), {base: path.join(__dirname, 'src')})
+    .pipe(gulp.dest(path.join(this.config.gameDir, 'build')));
 
-    gulp.src(this.config.gameDir + '/src/**/*.*', {base: this.config.gameDir + '/src/'})
-    .pipe(gulp.dest(this.config.gameDir + '/build'));
+    gulp.src(path.join(dismae.config.gameDir, 'src', '**', '*.*'), {base: path.join(this.config.gameDir, 'src')})
+    .pipe(gulp.dest(path.join(this.config.gameDir, 'build')));
 
     //dependencies are in a different place if dismae is installed in a module
     //probably not the best way to handle this, but I couldn't figure out a
     //better one offhand
-    fs.stat(`${__dirname}/node_modules/phaser/build/phaser.min.js`, function(err, stat) {
+    fs.stat(path.join(__dirname, 'node_modules', 'phaser', 'build', 'phaser.min.js'), function(err, stat) {
       if(err === null) {
-        gulp.src(`${__dirname}/node_modules/phaser/build/phaser.min.js`)
-        .pipe(gulp.dest(dismae.config.gameDir + '/build/dismae/phaser'));
+        gulp.src(path.join(__dirname, 'node_modules', 'phaser', 'build', 'phaser.min.js'))
+        .pipe(gulp.dest(path.join(dismae.config.gameDir, 'build', 'dismae', 'phaser')));
       } else {
-        gulp.src(`${__dirname}/../phaser/build/phaser.min.js`)
-        .pipe(gulp.dest(dismae.config.gameDir + '/build/dismae/phaser'));
+        gulp.src(path.join(__dirname, '..', 'phaser', 'build', 'phaser.min.js'))
+        .pipe(gulp.dest(path.join(dismae.config.gameDir, 'build', 'dismae', 'phaser')));
       }
     });
 
     dismae.buildAssetFile(function(assets){
-      var index = fs.readFileSync(`${__dirname}/src/index.pug`, 'utf8');
+      var index = fs.readFileSync(path.join(__dirname, 'src', 'index.pug'), 'utf8');
       index = pug.compile(index, {pretty: true});
       index = index(dismae.resolveConfigPaths(dismae.config, assets));
-      fs.writeFileSync(dismae.config.gameDir + '/build/index.html', index, 'utf8');
+      fs.writeFileSync(path.join(dismae.config.gameDir, 'build', 'index.html'), index, 'utf8');
       callback();
     });
   }
 
   clean(callback) {
-    rimraf(this.config.gameDir + '/build', callback);
+    rimraf(path.join(this.config.gameDir, 'build'), callback);
   }
 
   buildAssetFile(callback){
     var dismae = this;
     var assets = {};
-    recursiveReaddir(dismae.config.gameDir + '/src/assets', ['.*'], function (err, files) {
+    recursiveReaddir(path.join(dismae.config.gameDir, 'src', 'assets'), ['.*'], function (err, files) {
       var pathArray;
       var assetName;
       var depth;
       var file;
 
       for(var i = 0; i < files.length; i++) {
-        file = files[i].replace(dismae.config.gameDir + 'src/', '');
-        pathArray = file.split('/');
+        file = files[i].replace(path.join(dismae.config.gameDir, 'src') + path.sep, '');
+        pathArray = file.split(path.sep);
         depth = pathArray.length - 1;
         assetName = pathArray[depth];
         while(assets[assetName]){
           depth--;
-          assetName = pathArray[depth] + '/' + assetName;
+          assetName = pathArray[depth] + path.sep + assetName;
         }
         assets[assetName] = file;
       }
 
-      fs.writeFileSync(dismae.config.gameDir + '/build/assets.json', JSON.stringify(assets, null, '  '), 'utf8');
+      fs.writeFileSync(path.join(dismae.config.gameDir, 'build', 'assets.json'), JSON.stringify(assets, null, '  '), 'utf8');
 
       callback(assets);
     });
