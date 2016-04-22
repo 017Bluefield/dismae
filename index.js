@@ -126,7 +126,7 @@ module.exports = class dismae extends EventEmitter {
         }
         callback();
       } else if (platform === 'win32') {
-        proc.execFileSync(path.join(__dirname, 'bin', '7zip', '7za.exe'), ['x ' + zipPath, '-o ' + path.join(dismae.tempDir, 'electron-win32')]);
+        proc.execFileSync(path.join(__dirname, 'bin', '7zip', '7za.exe'), ['x ' + zipPath, '-o' + path.join(dismae.tempDir, 'electron-win32')]);
         callback();
       }
     }
