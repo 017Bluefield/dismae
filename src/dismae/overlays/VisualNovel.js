@@ -52,6 +52,7 @@ Dismae.VisualNovel.prototype = {
       switch(this.script[this.scriptIndex].charAt(0)){
         case '"':
           this.scriptStatement.text = JSON.parse(this.script[this.scriptIndex]);
+          this.scriptIndex++;
         break;
         case '{':
           this.scriptStatement = JSON.parse(this.script[this.scriptIndex]);
@@ -71,10 +72,9 @@ Dismae.VisualNovel.prototype = {
           this.scriptStatement.raw = this.script[this.scriptIndex].split('"');
           this.scriptStatement.say = this.scriptStatement.raw[0];
           this.scriptStatement.text = this.scriptStatement.raw[1];
+          this.scriptIndex++;
         break;
       }
-
-      this.scriptIndex++;
     } else {
       this.destroy();
     }
