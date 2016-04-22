@@ -9,8 +9,8 @@ const fs = require('fs');
 var recursiveReaddir = require('recursive-readdir');
 var os = require('os');
 var path = require('path');
-var download = require('electron-download');
 const EventEmitter = require('events');
+var Download = require('download');
 
 // spawn electron
 module.exports = class dismae extends EventEmitter {
@@ -62,9 +62,44 @@ module.exports = class dismae extends EventEmitter {
     }
   }
 
+  downloadElectron(options, callback) {
+    var dismae = this;
+    var platform = options.platform || os.platform();
+    var arch = options.arch || os.arch();
+    var version = options.version;
+    var filename = 'electron-v' + version + '-' + platform + '-' + arch + '.zip'
+    var url = 'https://github.com/electron/electron/releases/download/v';
+    url += version + '/' + filename;
+    var cache = options.cache;
+
+    try {
+      var exists = fs.lstatSync(dismae.tempDir);
+    } catch (e) {
+      fs.mkdirSync(dismae.tempDir);
+    }
+    try {
+      var exists = fs.lstatSync(cache);
+    } catch (e) {
+      fs.mkdirSync(cache);
+    }
+    try {
+      var exists = fs.lstatSync(path.join(cache,filename));
+      // already downloaded
+      callback(null, path.join(cache,filename))
+    } catch (e) {
+      // haven't downloaded it yet
+      new Download({mode: '755'})
+      .get(url)
+      .dest(cache)
+      .run(function(){
+        callback(null, path.join(cache,filename));
+      });
+    }
+  }
+
   installElectron(platform, callback) {
     var dismae = this;
-    download({version: '0.37.6', cache: path.join(this.tempDir, 'cache')}, extractFile)
+    dismae.downloadElectron({version: '0.37.6', cache: path.join(dismae.tempDir, 'cache')}, extractFile)
 
     // unzips and makes path.txt point at the correct executable
     function extractFile (err, zipPath) {
@@ -78,24 +113,23 @@ module.exports = class dismae extends EventEmitter {
       if(platform === 'darwin'){
         proc.execSync('unzip ' + zipPath + ' -d ' + path.join(dismae.tempDir, 'electron-darwin'));
         callback();
+      } else if (platform === 'linux') {
+        proc.execSync('unzip ' + zipPath + ' -d ' + path.join(dismae.tempDir, 'electron-linux'));
+        electronAppPath = path.join(path.join(dismae.tempDir, 'electron-linux'), 'electron')
+        if (fs.existsSync(electronAppPath)) {
+          fs.chmodSync(electronAppPath, '755');
+        }
+
+        atomAppPath = path.join(path.join(dismae.tempDir, 'electron-linux'), 'atom')
+        if (fs.existsSync(atomAppPath)) {
+          fs.chmodSync(atomAppPath, '755');
+        }
+        callback();
       } else {
         var DecompressZip = require('decompress-zip');
         unzipper = new DecompressZip(zipPath);
         unzipper.on('error', callback)
         unzipper.on('extract', function() {
-          //Make sure atom/electron is executable on Linux
-          if (platform === 'linux') {
-            electronAppPath = path.join(path.join(dismae.tempDir, 'electron-linux'), 'electron')
-            if (fs.existsSync(electronAppPath)) {
-              fs.chmodSync(electronAppPath, '755');
-            }
-
-            atomAppPath = path.join(path.join(dismae.tempDir, 'electron-linux'), 'atom')
-            if (fs.existsSync(atomAppPath)) {
-              fs.chmodSync(atomAppPath, '755');
-            }
-          }
-
           callback();
         });
         unzipper.extract({path: path.join(dismae.tempDir, `electron-${platform}`)});
