@@ -125,14 +125,9 @@ module.exports = class dismae extends EventEmitter {
           fs.chmodSync(atomAppPath, '755');
         }
         callback();
-      } else {
-        var DecompressZip = require('decompress-zip');
-        unzipper = new DecompressZip(zipPath);
-        unzipper.on('error', callback)
-        unzipper.on('extract', function() {
-          callback();
-        });
-        unzipper.extract({path: path.join(dismae.tempDir, `electron-${platform}`)});
+      } else if (platform === 'win32') {
+        proc.execFileSync(path.join(__dirname, 'bin', '7z1514.exe'), ['x', zipPath, '-o', path.join(dismae.tempDir, 'electron-windows')]);
+        callback();
       }
     }
   }
