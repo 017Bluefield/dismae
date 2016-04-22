@@ -79,7 +79,7 @@ module.exports = class dismae extends EventEmitter {
         proc.execSync('unzip ' + zipPath + ' -d ' + path.join(dismae.tempDir, 'electron-darwin'));
         callback();
       } else {
-        DecompressZip = require('decompress-zip');
+        var DecompressZip = require('decompress-zip');
         unzipper = new DecompressZip(zipPath);
         unzipper.on('error', callback)
         unzipper.on('extract', function() {
