@@ -1,49 +1,49 @@
-var electron = require('electron');
-var app = require('app');
-var BrowserWindow = require('browser-window');
+var electron = require('electron')
+var app = require('app')
+var BrowserWindow = require('browser-window')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-var mainWindow = null;
+var mainWindow = null
 
 // Quit when all windows are closed.
-app.on('window-all-closed', function() {
-  app.quit();
-});
+app.on('window-all-closed', function () {
+  app.quit()
+})
 
-app.on('ready', function() {
-  //get screen info
-  var electronScreen = electron.screen;
-  var size = electronScreen.getPrimaryDisplay().bounds;
-  var windowSize = {};
+app.on('ready', function () {
+  // get screen info
+  var electronScreen = electron.screen
+  var size = electronScreen.getPrimaryDisplay().bounds
+  var windowSize = {}
 
-  //if the screen is large enough to support a
-  //720p window comfortably
-  if(size.width >= 1366 && size.height >= 768){
-    windowSize.width = 1280;
-    windowSize.height = 720;
-  } else{
-    //otherwise make the window a little smaller
-    windowSize.width = 1024;
-    windowSize.height = 576;
+  // if the screen is large enough to support a
+  // 720p window comfortably
+  if (size.width >= 1366 && size.height >= 768) {
+    windowSize.width = 1280
+    windowSize.height = 720
+  } else {
+    // otherwise make the window a little smaller
+    windowSize.width = 1024
+    windowSize.height = 576
   }
 
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: windowSize.width, height: windowSize.height, x:0, y:0, resizable: false, useContentSize: true});
+  mainWindow = new BrowserWindow({width: windowSize.width, height: windowSize.height, x: 0, y: 0, resizable: false, useContentSize: true})
 
   // and load the index.html of the app.
-  mainWindow.loadURL('file://' + __dirname + '/index.html');
+  mainWindow.loadURL('file://' + __dirname + '/index.html') // eslint-disable-line no-path-concat
 
   // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools()
 
-  mainWindow.focus();
+  mainWindow.focus()
 
   // Emitted when the window is closed.
-  mainWindow.on('closed', function() {
+  mainWindow.on('closed', function () {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
-    mainWindow = null;
-  });
-});
+    mainWindow = null
+  })
+})
