@@ -2,7 +2,8 @@
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 
-[![node-dependencies](https://david-dm.org/Dischan/dismae.svg)](https://david-dm.org/Dischan/dismae) [![npm](https://img.shields.io/npm/dt/dismae.svg?maxAge=2592000)](https://www.npmjs.com/package/dismae)
+[![Dependency Status](https://david-dm.org/dischan/dismae.svg)](https://david-dm.org/dischan/dismae)
+[![devDependency Status](https://david-dm.org/dischan/dismae/dev-status.svg)](https://david-dm.org/dischan/dismae#info=devDependencies) [![npm](https://img.shields.io/npm/dt/dismae.svg?maxAge=2592000)](https://www.npmjs.com/package/dismae)
 [![npm](https://img.shields.io/npm/dm/dismae.svg?maxAge=2592000)](https://www.npmjs.com/package/dismae)
 
 Dismae is a game engine for story-based games built on [Phaser.io](http://phaser.io/) and [electron](http://electron.atom.io/). It is developed by [Dischan Media](https://dischan.co/).
