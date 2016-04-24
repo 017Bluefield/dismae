@@ -13,7 +13,7 @@ There are two ways to use Dismae. The first and easiest method is to use the [Di
 
 Alternatively, you can create you own project manually. Doing this requires node.js and some experience with creating node.js projects. If you choose this method, you can clone the [Dismae base project](https://github.com/Dischan/dismae-base) to use as a starting point. Once cloned, you should create a `package.json` file and include [Dismae](https://www.npmjs.com/package/dismae) as a dependency. You can do this automatically via `npm init` and `npm install --save dismae`.
 
-Once you have Dismae installed, you should create an `index.js` with the following content:
+Once you have Dismae installed, you should create an `index.js` in the root directory with the following content:
 
 ```javascript
 var dismae = require('dismae')
