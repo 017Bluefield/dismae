@@ -35,7 +35,7 @@ app.on('ready', function () {
   mainWindow.loadURL('file://' + __dirname + '/index.html') // eslint-disable-line no-path-concat
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 
   mainWindow.focus()
 

@@ -1,5 +1,4 @@
-window.Dismae.VisualNovel = function (game, scene) {
-  this.scene = scene
+window.Dismae.VisualNovel = function (game) {
   this.game = game
   this.add = this.game.add //  used to add sprites, text, groups, etc (Phaser.GameObjectFactory)
   this.camera = this.game.camera //  a reference to the game camera (Phaser.Camera)
@@ -17,12 +16,11 @@ window.Dismae.VisualNovel = function (game, scene) {
   this.physics = this.game.physics //  the physics manager (Phaser.Physics)
   this.rnd = this.game.rnd //  the repeatable random number generator (Phaser.RandomDataGenerator)
   this.ratio = window.innerHeight / 720
+  this.dismae = this.game.dismae
 }
 
 window.Dismae.VisualNovel.prototype = {
-  script: null,
-  scriptIndex: 0,
-  scriptStatement: {},
+  statement: {},
   showCharacterCount: 0,
   timer: null,
   text: null,
@@ -34,7 +32,7 @@ window.Dismae.VisualNovel.prototype = {
   backgrounds: {},
 
   incrementShowCharacterCount: function () {
-    if (this.showCharacterCount < this.scriptStatement.text.length) {
+    if (this.showCharacterCount < this.statement.text.length) {
       this.showCharacterCount++
     }
   },
@@ -46,33 +44,36 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   advanceScript: function () {
-    if (this.scriptIndex < this.script.length - 1) {
-      this.showCharacterCount = 1
-      switch (this.script[this.scriptIndex].charAt(0)) {
-        case '"':
-          this.scriptStatement.text = JSON.parse(this.script[this.scriptIndex])
-          this.scriptIndex++
-          break
-        case '{':
-          this.scriptStatement = JSON.parse(this.script[this.scriptIndex])
-          switch (this.scriptStatement.action) {
-            case 'show':
-              this.sprites[this.scriptStatement.target] = this.add.sprite(this.scriptStatement.start.x, this.scriptStatement.start.y, this.scriptStatement.target)
-              this.sprites[this.scriptStatement.target].alpha = this.scriptStatement.start.alpha
-              this.sprites[this.scriptStatement.target].tween = this.add.tween(this.sprites[this.scriptStatement.target])
-              this.sprites[this.scriptStatement.target].tween.to({x: this.scriptStatement.end.x, y: this.scriptStatement.end.y, alpha: this.scriptStatement.end.alpha}, 1000, window.Phaser.Easing[this.scriptStatement.easing.function][this.scriptStatement.easing.type])
-              this.sprites[this.scriptStatement.target].tween.start()
-              break
+    var statement = this.parser.parseStatement()
+
+    while (statement && statement.type !== 'say') {
+      switch (statement.type) {
+        case 'show':
+          console.log(statement)
+          this.sprites[statement.show] = this.add.sprite(statement.x, statement.y, statement.show)
+          this.sprites[statement.show].alpha = statement.alpha || 1
+          if (statement.animate) {
+            this.sprites[statement.show].tween = this.add.tween(this.sprites[statement.show])
+            this.sprites[statement.show].tween.to(
+              statement.to,
+              statement.over * 1000,
+              window.Phaser.Easing[statement.function.name][statement.function.type]
+              )
+            this.sprites[statement.show].tween.start()
           }
-          this.scriptIndex++
-          this.advanceScript()
+
           break
-        default:
-          this.scriptStatement.raw = this.script[this.scriptIndex].split('"')
-          this.scriptStatement.say = this.scriptStatement.raw[0]
-          this.scriptStatement.text = this.scriptStatement.raw[1]
-          this.scriptIndex++
-          break
+      }
+
+      statement = this.parser.parseStatement()
+    }
+
+    if (statement) {
+      if (statement.type === 'say') {
+        this.showCharacterCount = 1
+        this.statement = statement
+      } else {
+
       }
     } else {
       this.destroy()
@@ -80,12 +81,14 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   preload: function () {
-    this.load.text('intro', 'assets/scripts/' + this.scene + '.script')
-    this.load.image('sad_winter', 'assets/images/sprites/sad.png')
+    this.load.image('sad', 'assets/images/sprites/sad.png')
+    this.assets = this.cache.getJSON('assets')
+    console.log(this.assets)
+    this.load.text('ideal', this.assets['ideal.dis'])
   },
 
   create: function () {
-    this.script = this.cache.getText(this.scene).split('\n')
+    this.parser = this.dismae.Parser(this.cache.getText('ideal'))
 
     this.text = this.add.text(this.world.centerX, this.world.centerY)
     this.text.font = 'LiberationSans'
@@ -123,18 +126,18 @@ window.Dismae.VisualNovel.prototype = {
 
   update: function () {
     if (this.advance) {
-      if (this.showCharacterCount < this.scriptStatement.text.length) {
-        this.showCharacterCount = this.scriptStatement.text.length
+      if (this.showCharacterCount < this.statement.text.length) {
+        this.showCharacterCount = this.statement.text.length
       } else {
         this.advanceScript()
       }
 
       this.advance = false
     }
-    if (this.scriptStatement.say) {
-      this.say.text = this.scriptStatement.say
+    if (this.statement.say) {
+      this.say.text = this.statement.say
     }
-    this.text.text = this.scriptStatement.text.substring(0, this.showCharacterCount)
+    this.text.text = this.statement.text.substring(0, this.showCharacterCount)
   },
 
   destroy: function () {

@@ -5,6 +5,7 @@ head
   link(rel="stylesheet", type="text/css", href=fontStylesheet)
   script(src="dismae/phaser/phaser.min.js")
   script(src="dismae/states/Boot.js")
+  script(src="dismae/modules/Parser.js")
   script(src="dismae/states/Preloader.js")
   script(src="dismae/states/MainMenu.js")
   script(src="dismae/engines/VisualNovelWrapper.js")
@@ -16,11 +17,11 @@ body(style="margin:0;width:100%;height:100%;")
     window.onload = function() {
       var game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.WEBGL, 'gameContainer', null, null, false);
 
+      game.dismae = window.Dismae
       game.state.add('Boot', Dismae.Boot);
       game.state.add('Preloader', Dismae.Preloader);
       game.state.add('MainMenu', Dismae.MainMenu);
       game.state.add('Game', Dismae.Game);
-      game.state.add('VisualNovel', Dismae.VisualNovel);
       game.state.add('VisualNovelWrapper', Dismae.VisualNovelWrapper);
 
       game.state.start('Boot');

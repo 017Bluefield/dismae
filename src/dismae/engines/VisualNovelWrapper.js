@@ -1,5 +1,6 @@
 window.Dismae.VisualNovelWrapper = function (game) {
   this.ratio = window.innerHeight / 720
+  this.dismae = game.dismae
 }
 
 window.Dismae.VisualNovelWrapper.prototype = {
