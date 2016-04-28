@@ -78,19 +78,19 @@ window.Dismae.Parser = function (s) {
 
                     if (at.includes(' ')) {
                       at = at.split(' ')
-                      statement.x = at[0]
-                      statement.y = at[1]
+                      statement.x = Number(at[0])
+                      statement.y = Number(at[1])
                     } else {
                       propertyIndex++
-                      statement.x = at
-                      statement.y = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                      statement.x = Number(at)
+                      statement.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
                     }
 
                     log += ` at x:${statement.x} y:${statement.y}`
                     break
                   case 'opacity':
                     propertyIndex++
-                    statement.alpha = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                    statement.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
 
                     log += ` opacity ${statement.alpha}`
                     break
@@ -109,25 +109,25 @@ window.Dismae.Parser = function (s) {
 
                     if (to.includes(' ')) {
                       to = to.split(' ')
-                      statement.to.x = to[0]
-                      statement.to.y = to[1]
+                      statement.to.x = Number(to[0])
+                      statement.to.y = Number(to[1])
                     } else {
                       propertyIndex++
-                      statement.to.x = to
-                      statement.to.y = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                      statement.to.x = Number(to)
+                      statement.to.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
                     }
 
                     log += ` to x:${statement.to.x} y:${statement.to.y}`
                     break
                   case 'opacity':
                     propertyIndex++
-                    statement.to.alpha = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                    statement.to.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
 
                     log += ` opacity ${statement.to.alpha}`
                     break
                   case 'over':
                     propertyIndex++
-                    statement.over = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                    statement.over = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
 
                     log += ` over ${statement.over}`
                     break
@@ -164,25 +164,25 @@ window.Dismae.Parser = function (s) {
 
                   if (to.includes(' ')) {
                     to = to.split(' ')
-                    statement.to.x = to[0]
-                    statement.to.y = to[1]
+                    statement.to.x = Number(to[0])
+                    statement.to.y = Number(to[1])
                   } else {
                     propertyIndex++
-                    statement.to.x = to
-                    statement.to.y = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                    statement.to.x = Number(to)
+                    statement.to.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
                   }
 
                   log += ` to x:${statement.to.x} y:${statement.to.y}`
                   break
                 case 'opacity':
                   propertyIndex++
-                  statement.to.alpha = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                  statement.to.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
 
                   log += ` opacity ${statement.to.alpha}`
                   break
                 case 'over':
                   propertyIndex++
-                  statement.over = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+                  statement.over = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
 
                   log += ` over ${statement.over}`
                   break
