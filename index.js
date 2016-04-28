@@ -186,17 +186,19 @@ module.exports =
         var assetName
         var depth
         var file
+        var stats
 
         for (var i = 0; i < files.length; i++) {
+          stats = fs.lstatSync(files[i])
           file = files[i].replace(path.join(dismae.config.gameDir, 'src') + path.sep, '')
           pathArray = file.split(path.sep)
           depth = pathArray.length - 1
-          assetName = pathArray[depth]
+          assetName = pathArray[depth].split('.')[0]
           while (assets[assetName]) {
             depth--
             assetName = pathArray[depth] + path.sep + assetName
           }
-          assets[assetName] = file
+          assets[assetName] = {path: file, size: stats.size / 1000 / 1000}
         }
 
         fs.writeFileSync(path.join(dismae.config.gameDir, 'build', 'assets.json'), JSON.stringify(assets, null, '  '), 'utf8')
@@ -209,7 +211,7 @@ module.exports =
       for (var key in config) {
         if (config.hasOwnProperty(key)) {
           if (assets[config[key]]) {
-            config[key] = assets[config[key]]
+            config[key] = assets[config[key]].path
           }
         }
       }

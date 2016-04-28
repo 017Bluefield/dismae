@@ -45,58 +45,96 @@ window.Dismae.VisualNovel.prototype = {
     }
   },
 
-  advanceScript: function () {
-    var game = this
-
-    function killSprite (asset, game) {
-      game.sprites[asset].kill()
-
-      if (!game.assetUsageCounts[asset]) {
-        console.log(asset, ' no longer needed. Removing from cache.')
-        game.cache.removeImage(asset, true)
-      }
+  showSprite: function showSprite (statement, callback) {
+    console.log(statement)
+    this.assetUsageCounts[statement.show]--
+    console.log(statement.show, ' used. Usages: ', this.assetUsageCounts[statement.show])
+    this.sprites[statement.show] = this.add.sprite(statement.x, statement.y, statement.show)
+    if (statement.alpha === undefined) {
+      this.sprites[statement.show].alpha = 1
+    } else {
+      this.sprites[statement.show].alpha = statement.alpha
     }
 
+    if (statement.animate) {
+      this.sprites[statement.show].tween = this.add.tween(this.sprites[statement.show])
+      this.sprites[statement.show].tween.to(
+        statement.to,
+        statement.over * 1000,
+        window.Phaser.Easing[statement.function.name][statement.function.type]
+        )
+      this.sprites[statement.show].tween.start().onComplete.add(function () {
+        if (callback) {
+          callback()
+        }
+      })
+    }
+  },
+
+  hideSprite: function hideSprite (statement, callback) {
+    console.log(statement)
+    var _this = this
+
+    if (statement.animate) {
+      this.sprites[statement.hide].tween = this.add.tween(this.sprites[statement.hide])
+      this.sprites[statement.hide].tween.to(
+        statement.to,
+        statement.over * 1000,
+        window.Phaser.Easing[statement.function.name][statement.function.type]
+        )
+      var sprite = statement.hide
+      this.sprites[statement.hide].tween.start().onComplete.add(function () {
+        if (callback) {
+          callback()
+        }
+        _this.killSprite(sprite)
+      })
+    } else {
+      this.killSprite(statement.hide)
+    }
+  },
+
+  killSprite: function killSprite (asset) {
+    this.sprites[asset].kill()
+
+    if (!this.assetUsageCounts[asset]) {
+      console.log(asset, ' no longer needed. Removing from cache.')
+      this.cache.removeImage(asset, true)
+    }
+  },
+
+  advanceScript: function () {
     var statement = this.parser.nextStatement()
 
     while (statement && statement.type !== 'say') {
       switch (statement.type) {
         case 'show':
-          this.assetUsageCounts[statement.show]--
-          console.log(statement.show, ' used. Usages: ', this.assetUsageCounts[statement.show])
-          this.sprites[statement.show] = this.add.sprite(statement.x, statement.y, statement.show)
-          if (statement.alpha === undefined) {
-            this.sprites[statement.show].alpha = 1
-          } else {
-            this.sprites[statement.show].alpha = statement.alpha
-          }
-
-          if (statement.animate) {
-            this.sprites[statement.show].tween = this.add.tween(this.sprites[statement.show])
-            this.sprites[statement.show].tween.to(
-              statement.to,
-              statement.over * 1000,
-              window.Phaser.Easing[statement.function.name][statement.function.type]
-              )
-            this.sprites[statement.show].tween.start()
-          }
-
+          this.showSprite(statement)
           break
         case 'hide':
-          if (statement.animate) {
-            this.sprites[statement.hide].tween = this.add.tween(this.sprites[statement.hide])
-            this.sprites[statement.hide].tween.to(
-              statement.to,
-              statement.over * 1000,
-              window.Phaser.Easing[statement.function.name][statement.function.type]
-              )
-            var sprite = statement.hide
-            this.sprites[statement.hide].tween.start().onComplete.add(function () {
-              killSprite(sprite, game)
-            })
-          } else {
-            killSprite(statement.hide, game)
-          }
+          this.hideSprite(statement)
+          break
+        case 'change':
+          console.log(statement)
+          var hideStatement = Object.assign({}, statement)
+          var showStatement = Object.assign({}, statement)
+          hideStatement.to = Object.assign({}, statement.to)
+          showStatement.to = Object.assign({}, statement.to)
+          hideStatement.hide = statement.change.from
+          hideStatement.to.x = this.sprites[statement.change.from].x
+          hideStatement.to.y = this.sprites[statement.change.from].y
+          hideStatement.to.alpha = 0
+
+          showStatement.show = statement.change.to
+          showStatement.x = this.sprites[statement.change.from].x
+          showStatement.y = this.sprites[statement.change.from].y
+          showStatement.alpha = 0
+          showStatement.to.x = this.sprites[statement.change.from].x
+          showStatement.to.y = this.sprites[statement.change.from].y
+          showStatement.to.alpha = 1
+
+          this.hideSprite(hideStatement)
+          this.showSprite(showStatement)
 
           break
       }
@@ -108,8 +146,6 @@ window.Dismae.VisualNovel.prototype = {
       if (statement.type === 'say') {
         this.showCharacterCount = 1
         this.statement = statement
-      } else {
-
       }
     } else {
       this.destroy()
@@ -118,7 +154,7 @@ window.Dismae.VisualNovel.prototype = {
 
   preload: function () {
     this.assets = this.cache.getJSON('assets')
-    this.load.text('start', this.assets['start.dis'])
+    this.load.text('start', this.assets['start'].path)
   },
 
   create: function () {
@@ -171,8 +207,8 @@ window.Dismae.VisualNovel.prototype = {
           console.log(this.nextAsset, ' already loaded. Usages: ', this.assetUsageCounts[this.nextAsset])
         } else {
           this.assetUsageCounts[this.nextAsset] = 1
-          console.log('Loading ', this.assets[this.nextAsset], ' with key ', this.nextAsset)
-          this.load.image(this.nextAsset, this.assets[this.nextAsset])
+          console.log('Loading ', this.assets[this.nextAsset].path, ' with key ', this.nextAsset)
+          this.load.image(this.nextAsset, this.assets[this.nextAsset].path)
           this.load.start()
         }
       }
@@ -187,9 +223,8 @@ window.Dismae.VisualNovel.prototype = {
 
       this.advance = false
     }
-    if (this.statement.say) {
-      this.say.text = this.statement.say
-    }
+
+    this.say.text = this.statement.say
     this.text.text = this.statement.text.substring(0, this.showCharacterCount)
   },
 

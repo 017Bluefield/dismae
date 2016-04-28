@@ -10,14 +10,18 @@ window.Dismae.Parser = function (s) {
     // console.log('searching for next asset...')
     var result = parseStatement(assetCursor)
     assetCursor = result.cursor
-    while (result.statement && result.statement.type !== 'show') {
+    while (result.statement && result.statement.type !== 'show' && result.statement.type !== 'change') {
       result = parseStatement(assetCursor)
       assetCursor = result.cursor
     }
 
     if (result.statement) {
       // console.log('next asset: ', result.statement.show)
-      return result.statement.show
+      if (result.statement.type === 'show') {
+        return result.statement.show
+      } else if (result.statement.type === 'change') {
+        return result.statement.change.to
+      }
     } else {
       // console.log('no more assets')
       return false
@@ -49,7 +53,7 @@ window.Dismae.Parser = function (s) {
           if (lineArray[0].charAt(0) === '"') {
             var narrationArray = line.split('"')
             // console.log('narration statement: ', narrationArray[1])
-            statement = {type: 'say', text: narrationArray[1]}
+            statement = {type: 'say', say: '', text: narrationArray[1]}
           } else if (lineArray[1] === '=') {
             var assignmentArray = line.split('=')
             variables[assignmentArray[0].trim()] = assignmentArray[1].trim()
@@ -150,6 +154,63 @@ window.Dismae.Parser = function (s) {
             statement = {type: 'hide', hide: hide}
 
             propertyIndex = 2
+            while (propertyIndex < lineArray.length) {
+              switch (lineArray[propertyIndex]) {
+                case 'animate':
+                  statement.animate = true
+                  statement.to = {}
+
+                  log += ' animate'
+                  break
+                case 'to':
+                  propertyIndex++
+                  to = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+
+                  if (to.includes(' ')) {
+                    to = to.split(' ')
+                    statement.to.x = Number(to[0])
+                    statement.to.y = Number(to[1])
+                  } else {
+                    propertyIndex++
+                    statement.to.x = Number(to)
+                    statement.to.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+                  }
+
+                  log += ` to x:${statement.to.x} y:${statement.to.y}`
+                  break
+                case 'opacity':
+                  propertyIndex++
+                  statement.to.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+
+                  log += ` opacity ${statement.to.alpha}`
+                  break
+                case 'over':
+                  propertyIndex++
+                  statement.over = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+
+                  log += ` over ${statement.over}`
+                  break
+                case 'quadratic':
+                  propertyIndex++
+                  statement.function = {name: 'Quadratic', type: functionTypes[lineArray[propertyIndex]]}
+                  log += ` function ${statement.function.name}, type ${statement.function.type}`
+                  break
+              }
+
+              propertyIndex++
+            }
+            // console.log(log)
+          } else if (lineArray[0] === 'change') {
+            var changeArray = line.split(' ')
+            var change = {
+              from: variables[changeArray[1]] || changeArray[1],
+              to: variables[changeArray[3]] || changeArray[3]
+            }
+            log = `change statement: change ${change.from} to ${change.to}`
+
+            statement = {type: 'change', change: change}
+
+            propertyIndex = 4
             while (propertyIndex < lineArray.length) {
               switch (lineArray[propertyIndex]) {
                 case 'animate':
