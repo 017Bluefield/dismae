@@ -30,6 +30,8 @@ window.Dismae.VisualNovel.prototype = {
   alive: false,
   sprites: {},
   backgrounds: {},
+  nextAsset: false,
+  assetUsageCounts: {},
 
   incrementShowCharacterCount: function () {
     if (this.showCharacterCount < this.statement.text.length) {
@@ -44,14 +46,23 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   advanceScript: function () {
-    var statement = this.parser.nextStatement()
+    function killSprite (asset, game) {
+      game.sprites[asset].kill()
 
-    this.parser.nextAsset()
+      if (!game.assetUsageCounts[asset]) {
+        console.log(asset, ' no longer needed. Removing from cache.')
+        game.cache.removeImage(asset, true)
+      }
+    }
+
+    var statement = this.parser.nextStatement()
 
     while (statement && statement.type !== 'say') {
       switch (statement.type) {
         case 'show':
           console.log(statement)
+          this.assetUsageCounts[statement.show]--
+          console.log(statement.show, ' used. Usages: ', this.assetUsageCounts[statement.show])
           this.sprites[statement.show] = this.add.sprite(statement.x, statement.y, statement.show)
           this.sprites[statement.show].alpha = statement.alpha || 1
           if (statement.animate) {
@@ -62,6 +73,21 @@ window.Dismae.VisualNovel.prototype = {
               window.Phaser.Easing[statement.function.name][statement.function.type]
               )
             this.sprites[statement.show].tween.start()
+          }
+
+          break
+        case 'hide':
+          console.log(statement)
+          if (statement.animate) {
+            this.sprites[statement.hide].tween = this.add.tween(this.sprites[statement.hide])
+            this.sprites[statement.hide].tween.to(
+              statement.to,
+              statement.over * 1000,
+              window.Phaser.Easing[statement.function.name][statement.function.type]
+              )
+            this.sprites[statement.hide].tween.start(killSprite())
+          } else {
+            killSprite(statement.hide, this)
           }
 
           break
@@ -83,14 +109,16 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   preload: function () {
-    this.load.image('sad', 'assets/images/sprites/sad.png')
     this.assets = this.cache.getJSON('assets')
-    console.log(this.assets)
-    this.load.text('ideal', this.assets['ideal.dis'])
+    this.load.text('start', this.assets['start.dis'])
   },
 
   create: function () {
-    this.parser = this.dismae.Parser(this.cache.getText('ideal'))
+    this.load.onFileComplete.add(function (progress, fileKey, success, totalLoadedFiles, totalFiles) {
+      console.log('file loaded')
+      console.log(progress, fileKey, success, totalLoadedFiles, totalFiles)
+    }, this)
+    this.parser = this.dismae.Parser(this.cache.getText('start'))
 
     this.text = this.add.text(this.world.centerX, this.world.centerY)
     this.text.font = 'LiberationSans'
@@ -127,6 +155,21 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   update: function () {
+    if (this.load.hasLoaded) {
+      this.nextAsset = this.parser.nextAsset()
+      if (this.nextAsset) {
+        if (this.cache.checkImageKey(this.nextAsset)) {
+          this.assetUsageCounts[this.nextAsset]++
+          console.log(this.nextAsset, ' already loaded. Usages: ', this.assetUsageCounts[this.nextAsset])
+        } else {
+          this.assetUsageCounts[this.nextAsset] = 1
+          console.log('Loading ', this.assets[this.nextAsset], ' with key ', this.nextAsset)
+          this.load.image(this.nextAsset, this.assets[this.nextAsset])
+          this.load.start()
+        }
+      }
+    }
+
     if (this.advance) {
       if (this.showCharacterCount < this.statement.text.length) {
         this.showCharacterCount = this.statement.text.length
