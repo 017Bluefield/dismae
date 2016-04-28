@@ -1,14 +1,40 @@
 window.Dismae.Parser = function (s) {
   var variables = {}
-  var cursor = 0
+  var statementCursor = 0
+  var assetCursor = 0
   var script = s.split('\n')
   var functionTypes = {'out': 'Out', 'in': 'In', 'both': 'InOut'}
 
-  function parseStatement () {
+  // return the next referenced asset for caching purposes
+  function nextAsset () {
+    console.log('searching for next asset...')
+    var result = parseStatement(assetCursor)
+    assetCursor = result.cursor
+    while (result.statement && result.statement.type !== 'show') {
+      result = parseStatement(assetCursor)
+      assetCursor = result.cursor
+    }
+
+    if (result.statement) {
+      console.log('next asset: ', result.statement.show)
+      return result.statement.show
+    } else {
+      console.log('no more assets')
+      return false
+    }
+  }
+
+  function nextStatement () {
+    var result = parseStatement(statementCursor)
+    statementCursor = result.cursor
+    return result.statement
+  }
+
+  function parseStatement (cursor) {
     var statement
 
     if (cursor >= script.length) {
-      return false
+      return {statement: false, cursor: cursor}
     } else {
       while (cursor < script.length) {
         var line = script[cursor].trim()
@@ -62,7 +88,7 @@ window.Dismae.Parser = function (s) {
                     propertyIndex++
                     statement.alpha = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
 
-                    log += ` opacity ${statement.opacity}`
+                    log += ` opacity ${statement.alpha}`
                     break
                   case 'animate':
                     statement.animate = true
@@ -93,7 +119,7 @@ window.Dismae.Parser = function (s) {
                     propertyIndex++
                     statement.to.alpha = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
 
-                    log += ` opacity ${statement.to.opacity}`
+                    log += ` opacity ${statement.to.alpha}`
                     break
                   case 'over':
                     propertyIndex++
@@ -104,7 +130,7 @@ window.Dismae.Parser = function (s) {
                   case 'quadratic':
                     propertyIndex++
                     statement.function = {name: 'Quadratic', type: functionTypes[lineArray[propertyIndex]]}
-                    log += ` function ${statement.function}`
+                    log += ` function ${statement.function.name}, type ${statement.function.type}`
                     break
                 }
               }
@@ -117,16 +143,17 @@ window.Dismae.Parser = function (s) {
         cursor++
 
         if (statement) {
-          return statement
+          return {statement: statement, cursor: cursor}
         }
       }
 
-      return false
+      return {statement: false, cursor: cursor}
     }
   }
 
   return {
-    script: script,
-    parseStatement: parseStatement
+    parseStatement: parseStatement,
+    nextStatement: nextStatement,
+    nextAsset: nextAsset
   }
 }

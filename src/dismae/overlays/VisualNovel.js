@@ -44,7 +44,9 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   advanceScript: function () {
-    var statement = this.parser.parseStatement()
+    var statement = this.parser.nextStatement()
+
+    this.parser.nextAsset()
 
     while (statement && statement.type !== 'say') {
       switch (statement.type) {
@@ -65,7 +67,7 @@ window.Dismae.VisualNovel.prototype = {
           break
       }
 
-      statement = this.parser.parseStatement()
+      statement = this.parser.nextStatement()
     }
 
     if (statement) {
