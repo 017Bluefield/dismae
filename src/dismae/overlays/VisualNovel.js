@@ -30,7 +30,7 @@ window.Dismae.VisualNovel.prototype = {
   alive: false,
   sprites: {},
   backgrounds: {},
-  nextAsset: false,
+  nextAsset: null,
   assetUsageCounts: {},
 
   incrementShowCharacterCount: function () {
@@ -46,6 +46,8 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   advanceScript: function () {
+    var game = this
+
     function killSprite (asset, game) {
       game.sprites[asset].kill()
 
@@ -60,11 +62,15 @@ window.Dismae.VisualNovel.prototype = {
     while (statement && statement.type !== 'say') {
       switch (statement.type) {
         case 'show':
-          console.log(statement)
           this.assetUsageCounts[statement.show]--
           console.log(statement.show, ' used. Usages: ', this.assetUsageCounts[statement.show])
           this.sprites[statement.show] = this.add.sprite(statement.x, statement.y, statement.show)
-          this.sprites[statement.show].alpha = statement.alpha || 1
+          if (statement.alpha === undefined) {
+            this.sprites[statement.show].alpha = 1
+          } else {
+            this.sprites[statement.show].alpha = statement.alpha
+          }
+
           if (statement.animate) {
             this.sprites[statement.show].tween = this.add.tween(this.sprites[statement.show])
             this.sprites[statement.show].tween.to(
@@ -77,7 +83,6 @@ window.Dismae.VisualNovel.prototype = {
 
           break
         case 'hide':
-          console.log(statement)
           if (statement.animate) {
             this.sprites[statement.hide].tween = this.add.tween(this.sprites[statement.hide])
             this.sprites[statement.hide].tween.to(
@@ -85,9 +90,12 @@ window.Dismae.VisualNovel.prototype = {
               statement.over * 1000,
               window.Phaser.Easing[statement.function.name][statement.function.type]
               )
-            this.sprites[statement.hide].tween.start(killSprite())
+            var sprite = statement.hide
+            this.sprites[statement.hide].tween.start().onComplete.add(function () {
+              killSprite(sprite, game)
+            })
           } else {
-            killSprite(statement.hide, this)
+            killSprite(statement.hide, game)
           }
 
           break
@@ -155,7 +163,7 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   update: function () {
-    if (this.load.hasLoaded) {
+    if (this.nextAsset !== false && this.load.hasLoaded) {
       this.nextAsset = this.parser.nextAsset()
       if (this.nextAsset) {
         if (this.cache.checkImageKey(this.nextAsset)) {
