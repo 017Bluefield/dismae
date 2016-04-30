@@ -32,6 +32,8 @@ window.Dismae.VisualNovel.prototype = {
   backgrounds: {},
   nextAsset: null,
   assetUsageCounts: {},
+  cacheSize: 64,
+  cacheUsed: 0,
 
   incrementShowCharacterCount: function () {
     if (this.showCharacterCount < this.statement.text.length) {
@@ -46,33 +48,41 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   showSprite: function showSprite (statement, callback) {
-    console.log(statement)
-    this.assetUsageCounts[statement.show]--
-    console.log(statement.show, ' used. Usages: ', this.assetUsageCounts[statement.show])
-    this.sprites[statement.show] = this.add.sprite(statement.x, statement.y, statement.show)
-    if (statement.alpha === undefined) {
-      this.sprites[statement.show].alpha = 1
-    } else {
-      this.sprites[statement.show].alpha = statement.alpha
+    var game = this
+    function performShow () {
+      game.assetUsageCounts[statement.show]--
+      console.log(statement.show, ' used. Usages: ', game.assetUsageCounts[statement.show])
+      game.sprites[statement.show] = game.add.sprite(statement.x, statement.y, statement.show)
+      if (statement.alpha === undefined) {
+        game.sprites[statement.show].alpha = 1
+      } else {
+        game.sprites[statement.show].alpha = statement.alpha
+      }
+
+      if (statement.animate) {
+        game.sprites[statement.show].tween = game.add.tween(game.sprites[statement.show])
+        game.sprites[statement.show].tween.to(
+          statement.to,
+          statement.over * 1000,
+          window.Phaser.Easing[statement.function.name][statement.function.type]
+          )
+        game.sprites[statement.show].tween.start().onComplete.add(function () {
+          if (callback) {
+            callback()
+          }
+        })
+      }
     }
 
-    if (statement.animate) {
-      this.sprites[statement.show].tween = this.add.tween(this.sprites[statement.show])
-      this.sprites[statement.show].tween.to(
-        statement.to,
-        statement.over * 1000,
-        window.Phaser.Easing[statement.function.name][statement.function.type]
-        )
-      this.sprites[statement.show].tween.start().onComplete.add(function () {
-        if (callback) {
-          callback()
-        }
-      })
+    if (!this.cache.checkImageKey(statement.show)) {
+      this.loadAsset(statement.show)
+      performShow()
+    } else {
+      performShow()
     }
   },
 
   hideSprite: function hideSprite (statement, callback) {
-    console.log(statement)
     var _this = this
 
     if (statement.animate) {
@@ -100,6 +110,7 @@ window.Dismae.VisualNovel.prototype = {
     if (!this.assetUsageCounts[asset]) {
       console.log(asset, ' no longer needed. Removing from cache.')
       this.cache.removeImage(asset, true)
+      this.cacheUsed -= this.assets[asset].size
     }
   },
 
@@ -198,19 +209,26 @@ window.Dismae.VisualNovel.prototype = {
     this.advanceScript()
   },
 
+  loadAsset: function (asset) {
+    if (this.cache.checkImageKey(asset)) {
+      this.assetUsageCounts[asset]++
+      console.log(asset, ' already loaded. Usages: ', this.assetUsageCounts[asset])
+    } else {
+      this.assetUsageCounts[asset] = 1
+      console.log('Loading ', this.assets[asset].path, ' with key ', asset)
+      this.cacheUsed += this.assets[asset].size
+      this.load.image(asset, this.assets[asset].path)
+      this.load.start()
+    }
+  },
+
   update: function () {
-    if (this.nextAsset !== false && this.load.hasLoaded) {
+    if (this.nextAsset !== false && this.load.hasLoaded && this.cacheUsed < this.cacheSize) {
+      console.log(this.cacheUsed)
+
       this.nextAsset = this.parser.nextAsset()
       if (this.nextAsset) {
-        if (this.cache.checkImageKey(this.nextAsset)) {
-          this.assetUsageCounts[this.nextAsset]++
-          console.log(this.nextAsset, ' already loaded. Usages: ', this.assetUsageCounts[this.nextAsset])
-        } else {
-          this.assetUsageCounts[this.nextAsset] = 1
-          console.log('Loading ', this.assets[this.nextAsset].path, ' with key ', this.nextAsset)
-          this.load.image(this.nextAsset, this.assets[this.nextAsset].path)
-          this.load.start()
-        }
+        this.loadAsset(this.nextAsset)
       }
     }
 
