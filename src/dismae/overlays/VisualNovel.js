@@ -21,6 +21,7 @@ window.Dismae.VisualNovel = function (game) {
 
 window.Dismae.VisualNovel.prototype = {
   statement: {},
+  sayStatement: null,
   showCharacterCount: 0,
   timer: null,
   text: null,
@@ -34,9 +35,10 @@ window.Dismae.VisualNovel.prototype = {
   assetUsageCounts: {},
   cacheSize: 64,
   cacheUsed: 0,
+  loadingAsset: false,
 
   incrementShowCharacterCount: function () {
-    if (this.showCharacterCount < this.statement.text.length) {
+    if (this.sayStatement && this.showCharacterCount < this.sayStatement.text.length) {
       this.showCharacterCount++
     }
   },
@@ -52,7 +54,7 @@ window.Dismae.VisualNovel.prototype = {
     function performShow () {
       game.assetUsageCounts[statement.show]--
       console.log(statement.show, ' used. Usages: ', game.assetUsageCounts[statement.show])
-      game.sprites[statement.show] = game.add.sprite(statement.x, statement.y, statement.show)
+      game.sprites[statement.show] = game.spriteLayer.create(statement.x, statement.y, statement.show)
       if (statement.alpha === undefined) {
         game.sprites[statement.show].alpha = 1
       } else {
@@ -74,10 +76,13 @@ window.Dismae.VisualNovel.prototype = {
       }
     }
 
-    if (!this.cache.checkImageKey(statement.show)) {
+    if (this.load.getAsset('image', statement.show)) {
+      this.loadingAsset = true
+    } else if (!this.cache.checkImageKey(statement.show)) {
       this.loadAsset(statement.show)
-      performShow()
+      this.loadingAsset = true
     } else {
+      this.loadingAsset = false
       performShow()
     }
   },
@@ -115,51 +120,64 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   advanceScript: function () {
-    var statement = this.parser.nextStatement()
+    var game = this
 
-    while (statement && statement.type !== 'say') {
-      switch (statement.type) {
+    function executeStatement () {
+      switch (game.statement.type) {
         case 'show':
-          this.showSprite(statement)
+          game.showSprite(game.statement)
           break
         case 'hide':
-          this.hideSprite(statement)
+          game.hideSprite(game.statement)
           break
         case 'change':
-          console.log(statement)
-          var hideStatement = Object.assign({}, statement)
-          var showStatement = Object.assign({}, statement)
-          hideStatement.to = Object.assign({}, statement.to)
-          showStatement.to = Object.assign({}, statement.to)
-          hideStatement.hide = statement.change.from
-          hideStatement.to.x = this.sprites[statement.change.from].x
-          hideStatement.to.y = this.sprites[statement.change.from].y
+          console.log(game.statement)
+          var hideStatement = Object.assign({}, game.statement)
+          var showStatement = Object.assign({}, game.statement)
+          hideStatement.to = Object.assign({}, game.statement.to)
+          showStatement.to = Object.assign({}, game.statement.to)
+          hideStatement.hide = game.statement.change.from
+          hideStatement.to.x = game.sprites[game.statement.change.from].x
+          hideStatement.to.y = game.sprites[game.statement.change.from].y
           hideStatement.to.alpha = 0
 
-          showStatement.show = statement.change.to
-          showStatement.x = this.sprites[statement.change.from].x
-          showStatement.y = this.sprites[statement.change.from].y
+          showStatement.show = game.statement.change.to
+          showStatement.x = game.sprites[game.statement.change.from].x
+          showStatement.y = game.sprites[game.statement.change.from].y
           showStatement.alpha = 0
-          showStatement.to.x = this.sprites[statement.change.from].x
-          showStatement.to.y = this.sprites[statement.change.from].y
+          showStatement.to.x = game.sprites[game.statement.change.from].x
+          showStatement.to.y = game.sprites[game.statement.change.from].y
           showStatement.to.alpha = 1
 
-          this.hideSprite(hideStatement)
-          this.showSprite(showStatement)
+          game.hideSprite(hideStatement)
+          game.showSprite(showStatement)
 
           break
       }
 
-      statement = this.parser.nextStatement()
+      if (!game.loadingAsset) {
+        game.statement = game.parser.nextStatement()
+      }
     }
 
-    if (statement) {
-      if (statement.type === 'say') {
-        this.showCharacterCount = 1
-        this.statement = statement
+    console.log('advance script')
+    if (!game.loadingAsset) {
+      game.statement = game.parser.nextStatement()
+    }
+
+    executeStatement()
+
+    while (game.statement && game.statement.type !== 'say' && !game.loadingAsset) {
+      executeStatement()
+    }
+
+    if (game.statement) {
+      if (game.statement.type === 'say') {
+        game.showCharacterCount = 1
+        game.sayStatement = game.statement
       }
     } else {
-      this.destroy()
+      game.destroy()
     }
   },
 
@@ -169,13 +187,21 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   create: function () {
+    // layer for bgs
+    this.backgroundLayer = this.game.add.group()
+    // layer for sprites
+    this.spriteLayer = this.game.add.group()
+    // layer for ui
+    this.uiLayer = this.game.add.group()
+
     this.load.onFileComplete.add(function (progress, fileKey, success, totalLoadedFiles, totalFiles) {
       console.log('file loaded')
       console.log(progress, fileKey, success, totalLoadedFiles, totalFiles)
     }, this)
     this.parser = this.dismae.Parser(this.cache.getText('start'))
 
-    this.text = this.add.text(this.world.centerX, this.world.centerY)
+    this.text = this.add.text(0, this.world.centerY)
+    this.uiLayer.add(this.text)
     this.text.font = 'LiberationSans'
     this.text.fontSize = 24 * this.ratio
     this.text.fill = '#fff8ec'
@@ -185,7 +211,8 @@ window.Dismae.VisualNovel.prototype = {
     // xoffset, yoffset, color (rgba), blur, shadowStroke(bool), shadowFill(bool)
     this.text.setShadow(1, 2, 'rgba(0,0,0,1)', 0, true, true)
 
-    this.say = this.add.text(this.world.centerX, this.world.centerY - 30)
+    this.say = this.add.text(0, this.world.centerY - 30)
+    this.uiLayer.add(this.say)
     this.say.font = 'LiberationSans'
     this.say.fontSize = 22 * this.ratio
     this.say.fill = '#fff8ec'
@@ -206,7 +233,7 @@ window.Dismae.VisualNovel.prototype = {
 
     this.input.onTap.add(this.onTap, this)
     this.alive = true
-    this.advanceScript()
+    this.advance = true
   },
 
   loadAsset: function (asset) {
@@ -233,17 +260,21 @@ window.Dismae.VisualNovel.prototype = {
     }
 
     if (this.advance) {
-      if (this.showCharacterCount < this.statement.text.length) {
-        this.showCharacterCount = this.statement.text.length
+      if (this.sayStatement && this.sayStatement.text && this.showCharacterCount < this.sayStatement.text.length) {
+        this.showCharacterCount = this.sayStatement.text.length
       } else {
         this.advanceScript()
       }
 
-      this.advance = false
+      if (!this.loadingAsset) {
+        this.advance = false
+      }
     }
 
-    this.say.text = this.statement.say
-    this.text.text = this.statement.text.substring(0, this.showCharacterCount)
+    if (this.sayStatement) {
+      this.say.text = this.sayStatement.say
+      this.text.text = this.sayStatement.text.substring(0, this.showCharacterCount)
+    }
   },
 
   destroy: function () {
