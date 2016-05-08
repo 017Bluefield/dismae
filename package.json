@@ -19,7 +19,7 @@
   "homepage": "https://github.com/Dischan/dismae#readme",
   "dependencies": {
     "gulp": "^3.9.1",
-    "phaser": "^2.4.6",
+    "phaser": "^2.4.7",
     "pug": "^0.1.0",
     "recursive-readdir": "^2.0.0",
     "rimraf": "^2.5.2",
