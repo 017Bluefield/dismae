@@ -104,6 +104,12 @@ window.Dismae.Parser = function (s) {
 
                     log += ' animate'
                     break
+                  case 'as':
+                    propertyIndex++
+                    statement.as = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+
+                    log += ` as ${statement.as}`
+                    break
                 }
               } else {
                 switch (lineArray[propertyIndex]) {

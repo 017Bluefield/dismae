@@ -54,7 +54,14 @@ window.Dismae.VisualNovel.prototype = {
     function performShow () {
       game.assetUsageCounts[statement.show]--
       console.log(statement.show, ' used. Usages: ', game.assetUsageCounts[statement.show])
-      game.sprites[statement.show] = game.spriteLayer.create(statement.x, statement.y, statement.show)
+
+      if (statement.as === 'background') {
+        game.sprites[statement.show] = game.backgroundLayer.create(statement.x, statement.y, statement.show)
+      } else {
+        game.sprites[statement.show] = game.spriteLayer.create(statement.x, statement.y, statement.show)
+      }
+      game.sprites[statement.show].name = statement.show
+
       if (statement.alpha === undefined) {
         game.sprites[statement.show].alpha = 1
       } else {
@@ -67,7 +74,7 @@ window.Dismae.VisualNovel.prototype = {
           statement.to,
           statement.over * 1000,
           window.Phaser.Easing[statement.function.name][statement.function.type]
-          )
+        )
         game.sprites[statement.show].tween.start().onComplete.add(function () {
           if (callback) {
             callback()
@@ -131,7 +138,6 @@ window.Dismae.VisualNovel.prototype = {
           game.hideSprite(game.statement)
           break
         case 'change':
-          console.log(game.statement)
           var hideStatement = Object.assign({}, game.statement)
           var showStatement = Object.assign({}, game.statement)
           hideStatement.to = Object.assign({}, game.statement.to)
@@ -141,6 +147,9 @@ window.Dismae.VisualNovel.prototype = {
           hideStatement.to.y = game.sprites[game.statement.change.from].y
           hideStatement.to.alpha = 0
 
+          if (game.backgroundLayer.getByName(game.statement.change.from)) {
+            showStatement.as = 'background'
+          }
           showStatement.show = game.statement.change.to
           showStatement.x = game.sprites[game.statement.change.from].x
           showStatement.y = game.sprites[game.statement.change.from].y
@@ -160,7 +169,6 @@ window.Dismae.VisualNovel.prototype = {
       }
     }
 
-    console.log('advance script')
     if (!game.loadingAsset) {
       game.statement = game.parser.nextStatement()
     }
@@ -200,7 +208,7 @@ window.Dismae.VisualNovel.prototype = {
     }, this)
     this.parser = this.dismae.Parser(this.cache.getText('start'))
 
-    this.text = this.add.text(0, this.world.centerY)
+    this.text = this.add.text(this.world.centerX, this.world.centerY)
     this.uiLayer.add(this.text)
     this.text.font = 'LiberationSans'
     this.text.fontSize = 24 * this.ratio
@@ -211,7 +219,7 @@ window.Dismae.VisualNovel.prototype = {
     // xoffset, yoffset, color (rgba), blur, shadowStroke(bool), shadowFill(bool)
     this.text.setShadow(1, 2, 'rgba(0,0,0,1)', 0, true, true)
 
-    this.say = this.add.text(0, this.world.centerY - 30)
+    this.say = this.add.text(this.world.centerX, this.world.centerY - 30)
     this.uiLayer.add(this.say)
     this.say.font = 'LiberationSans'
     this.say.fontSize = 22 * this.ratio
