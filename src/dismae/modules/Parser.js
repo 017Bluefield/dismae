@@ -7,23 +7,20 @@ window.Dismae.Parser = function (s) {
 
   // return the next referenced asset for caching purposes
   function nextAsset () {
-    // console.log('searching for next asset...')
-    var result = parseStatement(assetCursor)
-    assetCursor = result.cursor
-    while (result.statement && result.statement.type !== 'show' && result.statement.type !== 'change') {
+    var result
+
+    do {
       result = parseStatement(assetCursor)
       assetCursor = result.cursor
-    }
+    } while (result.statement && result.statement.type !== 'show' && result.statement.type !== 'change')
 
     if (result.statement) {
-      // console.log('next asset: ', result.statement.show)
       if (result.statement.type === 'show') {
         return result.statement.show
       } else if (result.statement.type === 'change') {
         return result.statement.change.to
       }
     } else {
-      // console.log('no more assets')
       return false
     }
   }

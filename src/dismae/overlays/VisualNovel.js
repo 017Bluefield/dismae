@@ -1,6 +1,6 @@
 window.Dismae.VisualNovel = function (game) {
   this.game = game
-  this.add = this.game.add //  used to add sprites, text, groups, etc (Phaser.GameObjectFactory)
+  this.add = this.game.add //  used to add displayables, text, groups, etc (Phaser.GameObjectFactory)
   this.camera = this.game.camera //  a reference to the game camera (Phaser.Camera)
   this.cache = this.game.cache //  the game cache (Phaser.Cache)
   this.input = this.game.input //  the global input manager. You can access this.input.keyboard, this.input.mouse, as well from it. (Phaser.Input)
@@ -29,8 +29,7 @@ window.Dismae.VisualNovel.prototype = {
   advance: false,
   settings: null,
   alive: false,
-  sprites: {},
-  backgrounds: {},
+  displayables: {},
   nextAsset: null,
   assetUsageCounts: {},
   cacheSize: 64,
@@ -49,33 +48,32 @@ window.Dismae.VisualNovel.prototype = {
     }
   },
 
-  showSprite: function showSprite (statement, callback) {
+  show: function show (statement, callback) {
     var game = this
     function performShow () {
       game.assetUsageCounts[statement.show]--
-      console.log(statement.show, ' used. Usages: ', game.assetUsageCounts[statement.show])
 
       if (statement.as === 'background') {
-        game.sprites[statement.show] = game.backgroundLayer.create(statement.x, statement.y, statement.show)
+        game.displayables[statement.show] = game.backgroundLayer.create(statement.x, statement.y, statement.show)
       } else {
-        game.sprites[statement.show] = game.spriteLayer.create(statement.x, statement.y, statement.show)
+        game.displayables[statement.show] = game.spriteLayer.create(statement.x, statement.y, statement.show)
       }
-      game.sprites[statement.show].name = statement.show
+      game.displayables[statement.show].name = statement.show
 
       if (statement.alpha === undefined) {
-        game.sprites[statement.show].alpha = 1
+        game.displayables[statement.show].alpha = 1
       } else {
-        game.sprites[statement.show].alpha = statement.alpha
+        game.displayables[statement.show].alpha = statement.alpha
       }
 
       if (statement.animate) {
-        game.sprites[statement.show].tween = game.add.tween(game.sprites[statement.show])
-        game.sprites[statement.show].tween.to(
+        game.displayables[statement.show].tween = game.add.tween(game.displayables[statement.show])
+        game.displayables[statement.show].tween.to(
           statement.to,
           statement.over * 1000,
           window.Phaser.Easing[statement.function.name][statement.function.type]
         )
-        game.sprites[statement.show].tween.start().onComplete.add(function () {
+        game.displayables[statement.show].tween.start().onComplete.add(function () {
           if (callback) {
             callback()
           }
@@ -94,98 +92,89 @@ window.Dismae.VisualNovel.prototype = {
     }
   },
 
-  hideSprite: function hideSprite (statement, callback) {
+  hide: function hide (statement, callback) {
     var _this = this
 
     if (statement.animate) {
-      this.sprites[statement.hide].tween = this.add.tween(this.sprites[statement.hide])
-      this.sprites[statement.hide].tween.to(
+      this.displayables[statement.hide].tween = this.add.tween(this.displayables[statement.hide])
+      this.displayables[statement.hide].tween.to(
         statement.to,
         statement.over * 1000,
         window.Phaser.Easing[statement.function.name][statement.function.type]
         )
       var sprite = statement.hide
-      this.sprites[statement.hide].tween.start().onComplete.add(function () {
+      this.displayables[statement.hide].tween.start().onComplete.add(function () {
         if (callback) {
           callback()
         }
-        _this.killSprite(sprite)
+        _this.kill(sprite)
       })
     } else {
-      this.killSprite(statement.hide)
+      this.kill(statement.hide)
     }
   },
 
-  killSprite: function killSprite (asset) {
-    this.sprites[asset].kill()
+  kill: function kill (asset) {
+    this.displayables[asset].kill()
 
     if (!this.assetUsageCounts[asset]) {
-      console.log(asset, ' no longer needed. Removing from cache.')
       this.cache.removeImage(asset, true)
       this.cacheUsed -= this.assets[asset].size
     }
   },
 
+  executeStatement: function executeStatement () {
+    switch (this.statement.type) {
+      case 'show':
+        this.show(this.statement)
+        break
+      case 'hide':
+        this.hide(this.statement)
+        break
+      case 'change':
+        var hideStatement = Object.assign({}, this.statement)
+        var showStatement = Object.assign({}, this.statement)
+        hideStatement.to = Object.assign({}, this.statement.to)
+        showStatement.to = Object.assign({}, this.statement.to)
+        hideStatement.hide = this.statement.change.from
+        hideStatement.to.x = this.displayables[this.statement.change.from].x
+        hideStatement.to.y = this.displayables[this.statement.change.from].y
+        hideStatement.to.alpha = 0
+
+        if (this.backgroundLayer.getByName(this.statement.change.from)) {
+          showStatement.as = 'background'
+        }
+        showStatement.show = this.statement.change.to
+        showStatement.x = this.displayables[this.statement.change.from].x
+        showStatement.y = this.displayables[this.statement.change.from].y
+        showStatement.alpha = 0
+        showStatement.to.x = this.displayables[this.statement.change.from].x
+        showStatement.to.y = this.displayables[this.statement.change.from].y
+        showStatement.to.alpha = 1
+
+        this.hide(hideStatement)
+        this.show(showStatement)
+
+        break
+    }
+  },
+
   advanceScript: function () {
-    var game = this
-
-    function executeStatement () {
-      switch (game.statement.type) {
-        case 'show':
-          game.showSprite(game.statement)
-          break
-        case 'hide':
-          game.hideSprite(game.statement)
-          break
-        case 'change':
-          var hideStatement = Object.assign({}, game.statement)
-          var showStatement = Object.assign({}, game.statement)
-          hideStatement.to = Object.assign({}, game.statement.to)
-          showStatement.to = Object.assign({}, game.statement.to)
-          hideStatement.hide = game.statement.change.from
-          hideStatement.to.x = game.sprites[game.statement.change.from].x
-          hideStatement.to.y = game.sprites[game.statement.change.from].y
-          hideStatement.to.alpha = 0
-
-          if (game.backgroundLayer.getByName(game.statement.change.from)) {
-            showStatement.as = 'background'
-          }
-          showStatement.show = game.statement.change.to
-          showStatement.x = game.sprites[game.statement.change.from].x
-          showStatement.y = game.sprites[game.statement.change.from].y
-          showStatement.alpha = 0
-          showStatement.to.x = game.sprites[game.statement.change.from].x
-          showStatement.to.y = game.sprites[game.statement.change.from].y
-          showStatement.to.alpha = 1
-
-          game.hideSprite(hideStatement)
-          game.showSprite(showStatement)
-
-          break
+    do {
+      if (!this.loadingAsset) {
+        this.statement = this.parser.nextStatement()
       }
 
-      if (!game.loadingAsset) {
-        game.statement = game.parser.nextStatement()
-      }
-    }
+      this.executeStatement()
+    } while (this.statement && this.statement.type !== 'say' && !this.loadingAsset)
 
-    if (!game.loadingAsset) {
-      game.statement = game.parser.nextStatement()
-    }
-
-    executeStatement()
-
-    while (game.statement && game.statement.type !== 'say' && !game.loadingAsset) {
-      executeStatement()
-    }
-
-    if (game.statement) {
-      if (game.statement.type === 'say') {
-        game.showCharacterCount = 1
-        game.sayStatement = game.statement
+    if (this.statement) {
+      if (this.statement.type === 'say') {
+        this.showCharacterCount = 1
+        this.sayStatement = this.statement
       }
     } else {
-      game.destroy()
+      this.destroy()
     }
   },
 
@@ -197,15 +186,16 @@ window.Dismae.VisualNovel.prototype = {
   create: function () {
     // layer for bgs
     this.backgroundLayer = this.game.add.group()
-    // layer for sprites
+    // layer for displayables
     this.spriteLayer = this.game.add.group()
     // layer for ui
     this.uiLayer = this.game.add.group()
 
-    this.load.onFileComplete.add(function (progress, fileKey, success, totalLoadedFiles, totalFiles) {
-      console.log('file loaded')
-      console.log(progress, fileKey, success, totalLoadedFiles, totalFiles)
-    }, this)
+    // this.load.onFileComplete.add(function (progress, fileKey, success, totalLoadedFiles, totalFiles) {
+    //   console.log('file loaded')
+    //   console.log(progress, fileKey, success, totalLoadedFiles, totalFiles)
+    // }, this)
+
     this.parser = this.dismae.Parser(this.cache.getText('start'))
 
     this.text = this.add.text(this.world.centerX, this.world.centerY)
@@ -230,13 +220,8 @@ window.Dismae.VisualNovel.prototype = {
     // xoffset, yoffset, color (rgba), blur, shadowStroke(bool), shadowFill(bool)
     this.say.setShadow(1, 2, 'rgba(0,0,0,1)', 0, true, true)
 
-    //  Create our Timer
     this.timer = this.time.create(false)
-
     this.timer.loop(50, this.incrementShowCharacterCount, this)
-
-    //  Start the timer running - this is important!
-    //  It won't start automatically, allowing you to hook it to button events and the like.
     this.timer.start(0)
 
     this.input.onTap.add(this.onTap, this)
@@ -247,10 +232,8 @@ window.Dismae.VisualNovel.prototype = {
   loadAsset: function (asset) {
     if (this.cache.checkImageKey(asset)) {
       this.assetUsageCounts[asset]++
-      console.log(asset, ' already loaded. Usages: ', this.assetUsageCounts[asset])
     } else {
       this.assetUsageCounts[asset] = 1
-      console.log('Loading ', this.assets[asset].path, ' with key ', asset)
       this.cacheUsed += this.assets[asset].size
       this.load.image(asset, this.assets[asset].path)
       this.load.start()
@@ -259,8 +242,6 @@ window.Dismae.VisualNovel.prototype = {
 
   update: function () {
     if (this.nextAsset !== false && this.load.hasLoaded && this.cacheUsed < this.cacheSize) {
-      console.log(this.cacheUsed)
-
       this.nextAsset = this.parser.nextAsset()
       if (this.nextAsset) {
         this.loadAsset(this.nextAsset)
@@ -268,7 +249,7 @@ window.Dismae.VisualNovel.prototype = {
     }
 
     if (this.advance) {
-      if (this.sayStatement && this.sayStatement.text && this.showCharacterCount < this.sayStatement.text.length) {
+      if (this.sayStatement && this.showCharacterCount < this.sayStatement.text.length) {
         this.showCharacterCount = this.sayStatement.text.length
       } else {
         this.advanceScript()
@@ -288,8 +269,8 @@ window.Dismae.VisualNovel.prototype = {
   destroy: function () {
     this.text.kill()
     this.say.kill()
-    for (var key in this.sprites) {
-      this.sprites[key].kill()
+    for (var key in this.displayables) {
+      this.displayables[key].kill()
     }
     this.alive = false
   },
