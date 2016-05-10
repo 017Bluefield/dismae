@@ -3,7 +3,7 @@ window.Dismae.Parser = function (s) {
   var statementCursor = 0
   var assetCursor = 0
   var script = s.split('\n')
-  var functionTypes = {'out': 'Out', 'in': 'In', 'both': 'InOut'}
+  var functionTypes = {'out': 'Out', 'in': 'In', 'both': 'InOut', 'none': 'None'}
 
   // return the next referenced asset for caching purposes
   function nextAsset () {
@@ -141,6 +141,11 @@ window.Dismae.Parser = function (s) {
                   case 'quadratic':
                     propertyIndex++
                     statement.function = {name: 'Quadratic', type: functionTypes[lineArray[propertyIndex]]}
+                    log += ` function ${statement.function.name}, type ${statement.function.type}`
+                    break
+                  case 'linear':
+                    propertyIndex++
+                    statement.function = {name: 'Linear', type: functionTypes[lineArray[propertyIndex]]}
                     log += ` function ${statement.function.name}, type ${statement.function.type}`
                     break
                 }
