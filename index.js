@@ -177,7 +177,7 @@ module.exports =
     buildAssetFile (callback) {
       var dismae = this
       var assets = {}
-      recursiveReaddir(path.join(dismae.config.gameDir, 'src', 'assets'), ['.*'], function (err, files) {
+      recursiveReaddir(path.join(dismae.config.gameDir, 'src'), ['.*'], function (err, files) {
         if (err) {
           dismae.emit('error', err)
         }

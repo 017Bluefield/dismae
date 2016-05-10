@@ -13,9 +13,9 @@ window.Dismae.Preloader.prototype = {
 
     this.load.setPreloadSprite(this.preloadBar)
 
-    this.load.image('titlepage', 'assets/images/ui/main_menu/main_menu.jpg')
-    this.load.atlas('playButton', 'assets/images/ui/main_menu/play_button.png', 'assets/images/ui/main_menu/play_button.json')
-    this.load.audio('titleMusic', ['assets/sounds/music/main_menu.mp3'])
+    this.load.image('titlepage', 'images/ui/main_menu/main_menu.jpg')
+    this.load.atlas('playButton', 'images/ui/main_menu/play_button.png', 'images/ui/main_menu/play_button.json')
+    this.load.audio('titleMusic', ['sounds/music/main_menu.mp3'])
 
     this.load.json('assets', 'assets.json')
   },

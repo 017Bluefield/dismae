@@ -25,8 +25,8 @@ window.Dismae.Boot.prototype = {
 
   preload: function () {
     //  Here we load the assets required for our preloader (in this case a background and a loading bar)
-    this.load.image('preloaderBackground', 'assets/images/ui/preloader/loader_background.jpg')
-    this.load.image('preloaderBar', 'assets/images/ui/preloader/loader_bar.png')
+    this.load.image('preloaderBackground', 'images/ui/preloader/loader_background.jpg')
+    this.load.image('preloaderBar', 'images/ui/preloader/loader_bar.png')
   },
 
   create: function () {
