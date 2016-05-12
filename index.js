@@ -15,10 +15,11 @@ var Download = require('download')
 // spawn electron
 module.exports =
   class dismae extends EventEmitter {
-    constructor (config) {
+    constructor (config, gameDir) {
       super()
       this.config = config
-      this.tempDir = path.join(config.gameDir, 'tmp')
+      this.gameDir = gameDir
+      this.tempDir = path.join(gameDir, 'tmp')
     }
 
     start () {
@@ -30,7 +31,7 @@ module.exports =
           dismae.emit('update', 'building')
           dismae.build(function () {
             dismae.emit('update', 'starting')
-            var mainjs = path.join(dismae.config.gameDir, 'build', 'main.js')
+            var mainjs = path.join(dismae.gameDir, 'build', 'main.js')
             var child = proc.spawn(electron, [mainjs])
             child.on('close', function (code) {
               dismae.emit('update', 'closed')
@@ -140,13 +141,13 @@ module.exports =
 
     build (callback) {
       let dismae = this
-      fs.mkdirSync(path.join(this.config.gameDir, 'build'))
+      fs.mkdirSync(path.join(this.gameDir, 'build'))
 
       gulp.src(path.join(__dirname, 'src', '**', '*.js'), {base: path.join(__dirname, 'src')})
-        .pipe(gulp.dest(path.join(this.config.gameDir, 'build')))
+        .pipe(gulp.dest(path.join(this.gameDir, 'build')))
 
-      gulp.src(path.join(dismae.config.gameDir, 'src', '**', '*.*'), {base: path.join(this.config.gameDir, 'src')})
-        .pipe(gulp.dest(path.join(this.config.gameDir, 'build')))
+      gulp.src(path.join(dismae.gameDir, 'src', '**', '*.*'), {base: path.join(this.gameDir, 'src')})
+        .pipe(gulp.dest(path.join(this.gameDir, 'build')))
 
       // dependencies are in a different place if dismae is installed in a module
       // probably not the best way to handle this, but I couldn't figure out a
@@ -154,30 +155,32 @@ module.exports =
       fs.stat(path.join(__dirname, 'node_modules', 'phaser', 'build', 'phaser.min.js'), function (err, stat) {
         if (err === null) {
           gulp.src(path.join(__dirname, 'node_modules', 'phaser', 'build', 'phaser.min.js'))
-            .pipe(gulp.dest(path.join(dismae.config.gameDir, 'build', 'dismae', 'phaser')))
+            .pipe(gulp.dest(path.join(dismae.gameDir, 'build', 'dismae', 'phaser')))
         } else {
           gulp.src(path.join(__dirname, '..', 'phaser', 'build', 'phaser.min.js'))
-            .pipe(gulp.dest(path.join(dismae.config.gameDir, 'build', 'dismae', 'phaser')))
+            .pipe(gulp.dest(path.join(dismae.gameDir, 'build', 'dismae', 'phaser')))
         }
       })
+
+      fs.writeFileSync(path.join(dismae.gameDir, 'build', 'config.json'), JSON.stringify(dismae.config, null, '  '), 'utf8')
 
       dismae.buildAssetFile(function (assets) {
         var index = fs.readFileSync(path.join(__dirname, 'src', 'index.pug'), 'utf8')
         index = pug.compile(index, {pretty: true})
         index = index(dismae.resolveConfigPaths(dismae.config, assets))
-        fs.writeFileSync(path.join(dismae.config.gameDir, 'build', 'index.html'), index, 'utf8')
+        fs.writeFileSync(path.join(dismae.gameDir, 'build', 'index.html'), index, 'utf8')
         callback()
       })
     }
 
     clean (callback) {
-      rimraf(path.join(this.config.gameDir, 'build'), callback)
+      rimraf(path.join(this.gameDir, 'build'), callback)
     }
 
     buildAssetFile (callback) {
       var dismae = this
       var assets = {}
-      recursiveReaddir(path.join(dismae.config.gameDir, 'src'), ['.*'], function (err, files) {
+      recursiveReaddir(path.join(dismae.gameDir, 'src'), ['.*'], function (err, files) {
         if (err) {
           dismae.emit('error', err)
         }
@@ -190,7 +193,7 @@ module.exports =
 
         for (var i = 0; i < files.length; i++) {
           stats = fs.lstatSync(files[i])
-          file = files[i].replace(path.join(dismae.config.gameDir, 'src') + path.sep, '')
+          file = files[i].replace(path.join(dismae.gameDir, 'src') + path.sep, '')
           pathArray = file.split(path.sep)
           depth = pathArray.length - 1
           assetName = pathArray[depth].split('.')[0]
@@ -201,7 +204,7 @@ module.exports =
           assets[assetName] = {path: file, size: stats.size / 1000 / 1000}
         }
 
-        fs.writeFileSync(path.join(dismae.config.gameDir, 'build', 'assets.json'), JSON.stringify(assets, null, '  '), 'utf8')
+        fs.writeFileSync(path.join(dismae.gameDir, 'build', 'assets.json'), JSON.stringify(assets, null, '  '), 'utf8')
 
         callback(assets)
       })

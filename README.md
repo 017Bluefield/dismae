@@ -21,9 +21,7 @@ var dismae = require('dismae')
 var config = require('./config')
 var process = require('process')
 
-config.gameDir = process.cwd()
-
-var game = new dismae(config)
+var game = new dismae(config, process.cwd())
 
 game.on('update', (event) => {
   console.log(event)
