@@ -1,29 +1,87 @@
 window.Dismae.MainMenu = function (game) {
-  this.music = null
-  this.playButton = null
+  this.game = game
+  this.dismae = this.game.dismae
   this.ratio = window.innerHeight / 720
+  this.displayables = {}
+  this.playing = {}
 }
 
 window.Dismae.MainMenu.prototype = {
   create: function () {
-    this.music = this.add.audio('titleMusic')
-    this.music.play()
+    // layer for bgs
+    this.backgroundLayer = this.add.group()
+    // layer for displayables
+    this.spriteLayer = this.add.group()
+    // layer for ui
+    this.uiLayer = this.add.group()
 
-    var title = this.add.sprite(0, 0, 'titlepage')
-    title.alpha = 0
-    title.scale.setTo(this.ratio)
-    this.add.tween(title).to({alpha: 1}, 2000, window.Phaser.Easing.Linear.None, true, 0)
+    this.config = this.cache.getJSON('config')
+    this.assets = this.cache.getJSON('assets')
+    this.parser = this.dismae.Parser(this.cache.getText(this.config.screens.main))
 
-    this.playButton = this.add.button(this.ratio * 400, this.ratio * 600, 'playButton', this.startGame, this, 'over', 'out', 'down')
-    this.playButton.alpha = 0
-    this.playButton.scale.setTo(this.ratio)
-    this.add.tween(this.playButton).to({alpha: 1}, 2000, window.Phaser.Easing.Linear.None, true, 0)
+    var statement = this.parser.nextStatement()
+    while (statement) {
+      switch (statement.type) {
+        case 'play':
+          this.playing[statement.play] = this.add.audio(statement.play)
+          this.playing[statement.play].name = statement.play
+          this.playing[statement.play].play()
+          break
+        case 'show':
+          if (statement.as === 'background') {
+            this.displayables[statement.show] = this.backgroundLayer.create(statement.x, statement.y, statement.show)
+          } else {
+            this.displayables[statement.show] = this.spriteLayer.create(statement.x, statement.y, statement.show)
+          }
+
+          if (statement.alpha === undefined) {
+            this.displayables[statement.show].alpha = 1
+          } else {
+            this.displayables[statement.show].alpha = statement.alpha
+          }
+
+          if (statement.animate) {
+            this.displayables[statement.show].tween = this.add.tween(this.displayables[statement.show])
+            this.displayables[statement.show].tween.to(
+              statement.to,
+              statement.over * 1000,
+              window.Phaser.Easing[statement.function.name][statement.function.type],
+              true
+            )
+          }
+          break
+        case 'button':
+          this.displayables[statement.button] = this.add.button(statement.x, statement.y, statement.button, this[statement.execute], this, 'over', 'out', 'down', 'up')
+          this.uiLayer.add(this.displayables[statement.button])
+
+          if (statement.alpha === undefined) {
+            this.displayables[statement.button].alpha = 1
+          } else {
+            this.displayables[statement.button].alpha = statement.alpha
+          }
+
+          if (statement.animate) {
+            this.displayables[statement.button].tween = this.add.tween(this.displayables[statement.button])
+            this.displayables[statement.button].tween.to(
+              statement.to,
+              statement.over * 1000,
+              window.Phaser.Easing[statement.function.name][statement.function.type],
+              true
+            )
+          }
+          break
+      }
+      statement = this.parser.nextStatement()
+    }
   },
 
   update: function () {},
 
   startGame: function (pointer) {
-    this.music.stop()
+    for (var key in this.playing) {
+      this.playing[key].destroy()
+    }
+
     this.state.start('VisualNovelWrapper')
   }
 }

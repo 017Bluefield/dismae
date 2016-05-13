@@ -1,8 +1,10 @@
 window.Dismae.Preloader = function (game) {
+  this.game = game
   this.background = null
   this.preloadBar = null
   this.ready = false
   this.ratio = window.innerHeight / 720
+  this.dismae = this.game.dismae
 }
 
 window.Dismae.Preloader.prototype = {
@@ -13,11 +15,29 @@ window.Dismae.Preloader.prototype = {
 
     this.load.setPreloadSprite(this.preloadBar)
 
-    this.load.image('titlepage', 'images/ui/main_menu/main_menu.jpg')
-    this.load.atlas('playButton', 'images/ui/main_menu/play_button.png', 'images/ui/main_menu/play_button.json')
-    this.load.audio('titleMusic', ['sounds/music/main_menu.mp3'])
+    this.config = this.cache.getJSON('config')
+    this.assets = this.cache.getJSON('assets')
 
-    this.load.json('assets', 'assets.json')
+    this.load.text(this.config.screens.main, this.assets[this.config.screens.main].path)
+
+    this.parser = this.dismae.Parser(this.cache.getText(this.config.screens.main))
+
+    this.nextAsset = this.parser.nextAsset()
+    while (this.nextAsset) {
+      switch (this.nextAsset.type) {
+        case 'image':
+          this.load.image(this.nextAsset.asset, this.assets[this.nextAsset.asset].path)
+          break
+        case 'audio':
+          this.load.audio(this.nextAsset.asset, this.assets[this.nextAsset.asset].path)
+          break
+        case 'atlas':
+          this.load.atlas(this.nextAsset.asset, this.assets[this.nextAsset.asset].path, this.assets[this.nextAsset.atlas].path)
+          break
+      }
+
+      this.nextAsset = this.parser.nextAsset()
+    }
   },
 
   create: function () {
@@ -35,7 +55,7 @@ window.Dismae.Preloader.prototype = {
     //  If you don't have any music in your game then put the game.state.start line into the create function and delete
     //  the update function completely.
 
-    if (this.cache.isSoundDecoded('titleMusic') && this.ready === false) {
+    if (this.cache.isSoundDecoded('main_menu') && this.ready === false) {
       this.ready = true
       this.state.start('MainMenu')
     }

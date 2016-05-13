@@ -30,6 +30,7 @@ window.Dismae.VisualNovel.prototype = {
   settings: null,
   alive: false,
   displayables: {},
+  playing: {},
   nextAsset: null,
   assetUsageCounts: {},
   cacheSize: 64,
@@ -84,7 +85,7 @@ window.Dismae.VisualNovel.prototype = {
     if (this.load.getAsset('image', statement.show)) {
       this.loadingAsset = true
     } else if (!this.cache.checkImageKey(statement.show)) {
-      this.loadAsset(statement.show)
+      this.loadAsset({asset: statement.show, type: 'image'})
       this.loadingAsset = true
     } else {
       this.loadingAsset = false
@@ -111,6 +112,28 @@ window.Dismae.VisualNovel.prototype = {
       })
     } else {
       this.kill(statement.hide)
+    }
+  },
+
+  play: function play (statement) {
+    var game = this
+    function performPlay () {
+      game.assetUsageCounts[statement.play]--
+      game.playing[statement.play] = game.add.audio(statement.play)
+      game.playing[statement.play].name = statement.play
+      game.playing[statement.play].play()
+    }
+
+    if (this.load.getAsset('sound', statement.play)) {
+      this.loadingAsset = true
+    } else if (!this.cache.checkSoundKey(statement.play)) {
+      this.loadAsset({asset: statement.play, type: 'audio'})
+      this.loadingAsset = true
+    } else if (!this.cache.isSoundDecoded(statement.play)) {
+      this.loadingAsset = true
+    } else {
+      this.loadingAsset = false
+      performPlay()
     }
   },
 
@@ -155,6 +178,9 @@ window.Dismae.VisualNovel.prototype = {
         this.hide(hideStatement)
         this.show(showStatement)
 
+        break
+      case 'play':
+        this.play(this.statement)
         break
     }
   },
@@ -230,12 +256,29 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   loadAsset: function (asset) {
-    if (this.cache.checkImageKey(asset)) {
-      this.assetUsageCounts[asset]++
+    var cacheCheck
+
+    switch (asset.type) {
+      case 'image':
+        cacheCheck = this.cache.checkImageKey(asset.asset)
+        break
+      case 'audio':
+        cacheCheck = this.cache.checkSoundKey(asset.asset)
+        break
+    }
+    if (cacheCheck) {
+      this.assetUsageCounts[asset.asset]++
     } else {
-      this.assetUsageCounts[asset] = 1
-      this.cacheUsed += this.assets[asset].size
-      this.load.image(asset, this.assets[asset].path)
+      this.assetUsageCounts[asset.asset] = 1
+      this.cacheUsed += this.assets[asset.asset].size
+      switch (asset.type) {
+        case 'image':
+          this.load.image(asset.asset, this.assets[asset.asset].path)
+          break
+        case 'audio':
+          this.load.audio(asset.asset, this.assets[asset.asset].path)
+          break
+      }
       this.load.start()
     }
   },
@@ -271,6 +314,9 @@ window.Dismae.VisualNovel.prototype = {
     this.say.kill()
     for (var key in this.displayables) {
       this.displayables[key].kill()
+    }
+    for (key in this.playing) {
+      this.playing[key].destroy()
     }
     this.alive = false
   },

@@ -12,13 +12,23 @@ window.Dismae.Parser = function (s) {
     do {
       result = parseStatement(assetCursor)
       assetCursor = result.cursor
-    } while (result.statement && result.statement.type !== 'show' && result.statement.type !== 'change')
+    } while (
+      result.statement &&
+      result.statement.type !== 'show' &&
+      result.statement.type !== 'change' &&
+      result.statement.type !== 'play' &&
+      result.statement.type !== 'button'
+    )
 
     if (result.statement) {
       if (result.statement.type === 'show') {
-        return result.statement.show
+        return { asset: result.statement.show, type: 'image' }
       } else if (result.statement.type === 'change') {
-        return result.statement.change.to
+        return { asset: result.statement.change.to, type: 'image' }
+      } else if (result.statement.type === 'play') {
+        return { asset: result.statement.play, type: 'audio' }
+      } else if (result.statement.type === 'button') {
+        return { asset: result.statement.button, atlas: result.statement.atlas, type: 'atlas' }
       }
     } else {
       return false
@@ -260,6 +270,191 @@ window.Dismae.Parser = function (s) {
                   statement.function = {name: 'Quadratic', type: functionTypes[lineArray[propertyIndex]]}
                   log += ` function ${statement.function.name}, type ${statement.function.type}`
                   break
+              }
+
+              propertyIndex++
+            }
+            // console.log(log)
+          } else if (lineArray[0] === 'play') {
+            var playArray = line.split(' ')
+            var play = variables[playArray[1]] || playArray[1]
+            log = `play statement: play ${playArray[1]}`
+
+            statement = {type: 'play', play: play}
+
+            // propertyIndex = 2
+            // while (propertyIndex < lineArray.length) {
+            //   if (!statement.animate) {
+            //     switch (lineArray[propertyIndex]) {
+            //       case 'at':
+            //         propertyIndex++
+            //         at = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+            //
+            //         if (at.includes(' ')) {
+            //           at = at.split(' ')
+            //           statement.x = Number(at[0])
+            //           statement.y = Number(at[1])
+            //         } else {
+            //           propertyIndex++
+            //           statement.x = Number(at)
+            //           statement.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+            //         }
+            //
+            //         log += ` at x:${statement.x} y:${statement.y}`
+            //         break
+            //       case 'opacity':
+            //         propertyIndex++
+            //         statement.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+            //
+            //         log += ` opacity ${statement.alpha}`
+            //         break
+            //       case 'animate':
+            //         statement.animate = true
+            //         statement.to = {}
+            //
+            //         log += ' animate'
+            //         break
+            //       case 'as':
+            //         propertyIndex++
+            //         statement.as = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+            //
+            //         log += ` as ${statement.as}`
+            //         break
+            //     }
+            //   } else {
+            //     switch (lineArray[propertyIndex]) {
+            //       case 'to':
+            //         propertyIndex++
+            //         to = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+            //
+            //         if (to.includes(' ')) {
+            //           to = to.split(' ')
+            //           statement.to.x = Number(to[0])
+            //           statement.to.y = Number(to[1])
+            //         } else {
+            //           propertyIndex++
+            //           statement.to.x = Number(to)
+            //           statement.to.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+            //         }
+            //
+            //         log += ` to x:${statement.to.x} y:${statement.to.y}`
+            //         break
+            //       case 'opacity':
+            //         propertyIndex++
+            //         statement.to.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+            //
+            //         log += ` opacity ${statement.to.alpha}`
+            //         break
+            //       case 'over':
+            //         propertyIndex++
+            //         statement.over = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+            //
+            //         log += ` over ${statement.over}`
+            //         break
+            //       case 'quadratic':
+            //         propertyIndex++
+            //         statement.function = {name: 'Quadratic', type: functionTypes[lineArray[propertyIndex]]}
+            //         log += ` function ${statement.function.name}, type ${statement.function.type}`
+            //         break
+            //       case 'linear':
+            //         propertyIndex++
+            //         statement.function = {name: 'Linear', type: functionTypes[lineArray[propertyIndex]]}
+            //         log += ` function ${statement.function.name}, type ${statement.function.type}`
+            //         break
+            //     }
+            //   }
+            //
+            //   propertyIndex++
+            // }
+            // console.log(log)
+          } else if (lineArray[0] === 'button') {
+            var buttonArray = line.split(' ')
+            var button = variables[buttonArray[1]] || buttonArray[1]
+            var atlas = variables[buttonArray[2]] || buttonArray[2]
+            log = `button statement: button ${buttonArray[1]} ${buttonArray[2]}`
+
+            statement = {type: 'button', button: button, atlas: atlas}
+
+            propertyIndex = 3
+            while (propertyIndex < lineArray.length) {
+              if (!statement.animate) {
+                switch (lineArray[propertyIndex]) {
+                  case 'at':
+                    propertyIndex++
+                    at = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+
+                    if (at.includes(' ')) {
+                      at = at.split(' ')
+                      statement.x = Number(at[0])
+                      statement.y = Number(at[1])
+                    } else {
+                      propertyIndex++
+                      statement.x = Number(at)
+                      statement.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+                    }
+
+                    log += ` at x:${statement.x} y:${statement.y}`
+                    break
+                  case 'opacity':
+                    propertyIndex++
+                    statement.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+
+                    log += ` opacity ${statement.alpha}`
+                    break
+                  case 'animate':
+                    statement.animate = true
+                    statement.to = {}
+
+                    log += ' animate'
+                    break
+                  case 'execute':
+                    propertyIndex++
+                    statement.execute = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+
+                    log += ` execute ${statement.execute}`
+                    break
+                }
+              } else {
+                switch (lineArray[propertyIndex]) {
+                  case 'to':
+                    propertyIndex++
+                    to = variables[lineArray[propertyIndex]] || lineArray[propertyIndex]
+
+                    if (to.includes(' ')) {
+                      to = to.split(' ')
+                      statement.to.x = Number(to[0])
+                      statement.to.y = Number(to[1])
+                    } else {
+                      propertyIndex++
+                      statement.to.x = Number(to)
+                      statement.to.y = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+                    }
+
+                    log += ` to x:${statement.to.x} y:${statement.to.y}`
+                    break
+                  case 'opacity':
+                    propertyIndex++
+                    statement.to.alpha = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+
+                    log += ` opacity ${statement.to.alpha}`
+                    break
+                  case 'over':
+                    propertyIndex++
+                    statement.over = Number(variables[lineArray[propertyIndex]] || lineArray[propertyIndex])
+
+                    log += ` over ${statement.over}`
+                    break
+                  case 'quadratic':
+                    propertyIndex++
+                    statement.function = {name: 'Quadratic', type: functionTypes[lineArray[propertyIndex]]}
+                    log += ` function ${statement.function.name}, type ${statement.function.type}`
+                    break
+                  case 'linear':
+                    propertyIndex++
+                    statement.function = {name: 'Linear', type: functionTypes[lineArray[propertyIndex]]}
+                    log += ` function ${statement.function.name}, type ${statement.function.type}`
+                    break
+                }
               }
 
               propertyIndex++

@@ -25,13 +25,25 @@ window.Dismae.Boot.prototype = {
 
   preload: function () {
     //  Here we load the assets required for our preloader (in this case a background and a loading bar)
+    this.load.json('assets', 'assets.json')
+    this.load.json('config', 'config.json')
+
     this.load.image('preloaderBackground', 'images/ui/preloader/loader_background.jpg')
     this.load.image('preloaderBar', 'images/ui/preloader/loader_bar.png')
   },
 
   create: function () {
-    //  By this point the preloader assets have loaded to the cache, we've set the game settings
-    //  So now let's start the real preloader going
-    this.state.start('Preloader')
+    function startPreloader () {
+      this.load.onLoadComplete.remove(startPreloader, this)
+      this.state.start('Preloader')
+    }
+
+    this.config = this.cache.getJSON('config')
+    this.assets = this.cache.getJSON('assets')
+
+    this.load.onLoadComplete.add(startPreloader, this)
+
+    this.load.text(this.config.screens.main, this.assets[this.config.screens.main].path)
+    this.load.start()
   }
 }
