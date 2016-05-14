@@ -118,10 +118,10 @@ module.exports =
         }
 
         if (platform === 'darwin') {
-          proc.execSync('unzip ' + zipPath + ' -d ' + path.join(dismae.tempDir, 'electron-darwin'))
+          proc.execSync(`unzip "${zipPath}" -d "${path.join(dismae.tempDir, 'electron-darwin')}"`)
           callback()
         } else if (platform === 'linux') {
-          proc.execSync('unzip ' + zipPath + ' -d ' + path.join(dismae.tempDir, 'electron-linux'))
+          proc.execSync(`unzip "${zipPath}" -d "${path.join(dismae.tempDir, 'electron-linux')}"`)
           var electronAppPath = path.join(path.join(dismae.tempDir, 'electron-linux'), 'electron')
           if (fs.existsSync(electronAppPath)) {
             fs.chmodSync(electronAppPath, '755')
