@@ -121,7 +121,17 @@ window.Dismae.VisualNovel.prototype = {
       game.assetUsageCounts[statement.play]--
       game.playing[statement.play] = game.add.audio(statement.play)
       game.playing[statement.play].name = statement.play
-      game.playing[statement.play].play()
+      statement.volume = statement.volume === undefined ? 1 : statement.volume
+      game.playing[statement.play].play('', 0, statement.volume, statement.loop)
+      if (statement.animate) {
+        game.playing[statement.play].tween = game.add.tween(game.playing[statement.play])
+        game.playing[statement.play].tween.to(
+          statement.to,
+          statement.over * 1000,
+          window.Phaser.Easing[statement.function.name][statement.function.type],
+          true
+        )
+      }
     }
 
     if (this.load.getAsset('sound', statement.play)) {
