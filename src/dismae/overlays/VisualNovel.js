@@ -35,7 +35,7 @@ window.Dismae.VisualNovel.prototype = {
   assetUsageCounts: {},
   cacheSize: 64,
   cacheUsed: 0,
-  loadingAsset: false,
+  wait: false,
 
   incrementShowCharacterCount: function () {
     if (this.sayStatement && this.showCharacterCount < this.sayStatement.text.length) {
@@ -83,12 +83,12 @@ window.Dismae.VisualNovel.prototype = {
     }
 
     if (this.load.getAsset('image', statement.show)) {
-      this.loadingAsset = true
+      this.wait = true
     } else if (!this.cache.checkImageKey(statement.show)) {
       this.loadAsset({asset: statement.show, type: 'image'})
-      this.loadingAsset = true
+      this.wait = true
     } else {
-      this.loadingAsset = false
+      this.wait = false
       performShow()
     }
   },
@@ -135,14 +135,14 @@ window.Dismae.VisualNovel.prototype = {
     }
 
     if (this.load.getAsset('sound', statement.play)) {
-      this.loadingAsset = true
+      this.wait = true
     } else if (!this.cache.checkSoundKey(statement.play)) {
       this.loadAsset({asset: statement.play, type: 'audio'})
-      this.loadingAsset = true
+      this.wait = true
     } else if (!this.cache.isSoundDecoded(statement.play)) {
-      this.loadingAsset = true
+      this.wait = true
     } else {
-      this.loadingAsset = false
+      this.wait = false
       performPlay()
     }
   },
@@ -192,17 +192,24 @@ window.Dismae.VisualNovel.prototype = {
       case 'play':
         this.play(this.statement)
         break
+      case 'wait':
+        this.wait = true
+        var game = this
+        setTimeout(function () {
+          game.wait = false
+        }, Number(this.statement.time) * 1000)
+        break
     }
   },
 
   advanceScript: function () {
     do {
-      if (!this.loadingAsset) {
+      if (!this.wait) {
         this.statement = this.parser.nextStatement()
       }
 
       this.executeStatement()
-    } while (this.statement && this.statement.type !== 'say' && !this.loadingAsset)
+    } while (this.statement && this.statement.type !== 'say' && !this.wait)
 
     if (this.statement) {
       if (this.statement.type === 'say') {
@@ -308,7 +315,7 @@ window.Dismae.VisualNovel.prototype = {
         this.advanceScript()
       }
 
-      if (!this.loadingAsset) {
+      if (!this.wait) {
         this.advance = false
       }
     }

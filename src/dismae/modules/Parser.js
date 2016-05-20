@@ -148,53 +148,59 @@ window.Dismae.Parser = function (s) {
         var line = script[cursor].trim()
         if (line) {
           var lineArray = line.split(' ')
+          var tokenizedArray
 
           if (lineArray[0].charAt(0) === '"') {
-            var narrationArray = line.split('"')
-            statement = {type: 'say', say: '', text: narrationArray[1]}
+            tokenizedArray = line.split('"')
+            statement = {type: 'say', say: '', text: tokenizedArray[1]}
           } else if (lineArray[1] === '=') {
-            var assignmentArray = line.split('=')
-            variables[assignmentArray[0].trim()] = assignmentArray[1].trim()
+            tokenizedArray = line.split('=')
+            variables[tokenizedArray[0].trim()] = tokenizedArray[1].trim()
           } else if (lineArray[1].charAt(0) === '"') {
-            var sayArray = line.split('"')
-            var say = sayArray[0].trim()
-            var text = sayArray[1].trim()
+            tokenizedArray = line.split('"')
+            var say = tokenizedArray[0].trim()
+            var text = tokenizedArray[1].trim()
             say = variables[say] || say
             statement = {type: 'say', say: say, text: text}
           } else if (lineArray[0] === 'show') {
-            var showArray = line.split(' ')
-            var show = variables[showArray[1]] || showArray[1]
+            tokenizedArray = line.split(' ')
+            var show = variables[tokenizedArray[1]] || tokenizedArray[1]
 
             statement = {type: 'show', show: show}
-            statement = parseProperties(statement, showArray, 2)
+            statement = parseProperties(statement, tokenizedArray, 2)
           } else if (lineArray[0] === 'hide') {
-            var hideArray = line.split(' ')
-            var hide = variables[hideArray[1]] || hideArray[1]
+            tokenizedArray = line.split(' ')
+            var hide = variables[tokenizedArray[1]] || tokenizedArray[1]
 
             statement = {type: 'hide', hide: hide}
-            statement = parseProperties(statement, hideArray, 2)
+            statement = parseProperties(statement, tokenizedArray, 2)
           } else if (lineArray[0] === 'change') {
-            var changeArray = line.split(' ')
+            tokenizedArray = line.split(' ')
             var change = {
-              from: variables[changeArray[1]] || changeArray[1],
-              to: variables[changeArray[3]] || changeArray[3]
+              from: variables[tokenizedArray[1]] || tokenizedArray[1],
+              to: variables[tokenizedArray[3]] || tokenizedArray[3]
             }
 
             statement = {type: 'change', change: change}
-            statement = parseProperties(statement, changeArray, 4)
+            statement = parseProperties(statement, tokenizedArray, 4)
           } else if (lineArray[0] === 'play') {
-            var playArray = line.split(' ')
-            var play = variables[playArray[1]] || playArray[1]
+            tokenizedArray = line.split(' ')
+            var play = variables[tokenizedArray[1]] || tokenizedArray[1]
 
             statement = {type: 'play', play: play}
-            statement = parseProperties(statement, playArray, 2)
+            statement = parseProperties(statement, tokenizedArray, 2)
           } else if (lineArray[0] === 'button') {
-            var buttonArray = line.split(' ')
-            var button = variables[buttonArray[1]] || buttonArray[1]
-            var atlas = variables[buttonArray[2]] || buttonArray[2]
+            tokenizedArray = line.split(' ')
+            var button = variables[tokenizedArray[1]] || tokenizedArray[1]
+            var atlas = variables[tokenizedArray[2]] || tokenizedArray[2]
 
             statement = {type: 'button', button: button, atlas: atlas}
-            statement = parseProperties(statement, buttonArray, 3)
+            statement = parseProperties(statement, tokenizedArray, 3)
+          } else if (lineArray[0] === 'wait') {
+            tokenizedArray = line.split(' ')
+            var time = variables[tokenizedArray[1]] || tokenizedArray[1]
+
+            statement = {type: 'wait', time: time}
           }
         }
         cursor++
