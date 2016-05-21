@@ -92,10 +92,8 @@ module.exports =
         callback(null, path.join(cache, filename))
       } catch (e) {
         // haven't downloaded it yet
-        progress(request(url, function () {
-          dismae.emit('progress', {percentage: 1})
-          callback(null, path.join(cache, filename))
-        }), {throttle: 500})
+        var zipStream = fs.createWriteStream(path.join(cache, filename))
+        progress(request(url), {throttle: 300})
         .on('progress', function (state) {
           // The state is an object that looks like this:
           // {
@@ -115,7 +113,12 @@ module.exports =
         .on('error', function (err) {
           dismae.emit('error', err)
         })
-        .pipe(fs.createWriteStream(path.join(cache, filename)))
+        .pipe(zipStream)
+
+        zipStream.on('finish', () => {
+          dismae.emit('progress', {percentage: 1})
+          callback(null, path.join(cache, filename))
+        });
       }
     }
 
