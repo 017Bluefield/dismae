@@ -1,6 +1,6 @@
 {
   "name": "dismae",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Game engine built with Phaser.io and Electron.",
   "main": "index.js",
   "scripts": {
