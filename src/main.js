@@ -1,6 +1,6 @@
 var electron = require('electron')
-var app = require('app')
-var BrowserWindow = require('browser-window')
+var app = electron.app
+var BrowserWindow = electron.BrowserWindow
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
