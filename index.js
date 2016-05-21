@@ -10,7 +10,8 @@ var recursiveReaddir = require('recursive-readdir')
 var os = require('os')
 var path = require('path')
 const EventEmitter = require('events')
-var Download = require('download')
+var request = require('request')
+var progress = require('request-progress')
 
 // spawn electron
 module.exports =
@@ -91,18 +92,36 @@ module.exports =
         callback(null, path.join(cache, filename))
       } catch (e) {
         // haven't downloaded it yet
-        new Download({mode: '755'})
-          .get(url)
-          .dest(cache)
-          .run(function () {
-            callback(null, path.join(cache, filename))
-          })
+        progress(request(url, function () {
+          dismae.emit('progress', {percentage: 1})
+          callback(null, path.join(cache, filename))
+        }), {throttle: 500})
+        .on('progress', function (state) {
+          // The state is an object that looks like this:
+          // {
+          //     percentage: 0.5,           // Overall percentage (between 0 to 1)
+          //     speed: 554732,             // The download speed in bytes/sec
+          //     size: {
+          //         total: 90044871,       // The total payload size in bytes
+          //         transferred: 27610959  // The transferred payload size in bytes
+          //     },
+          //     time: {
+          //         elapsed: 36.235,      // The total elapsed seconds since the start (3 decimals)
+          //         remaining: 81.403     // The remaining seconds to finish (3 decimals)
+          //     }
+          // }
+          dismae.emit('progress', state)
+        })
+        .on('error', function (err) {
+          dismae.emit('error', err)
+        })
+        .pipe(fs.createWriteStream(path.join(cache, filename)))
       }
     }
 
     installElectron (platform, callback) {
       var dismae = this
-      dismae.downloadElectron({version: '0.37.6', cache: path.join(dismae.tempDir, 'cache')}, extractFile)
+      dismae.downloadElectron({version: '1.1.1', cache: path.join(dismae.tempDir, 'cache')}, extractFile)
 
       // unzips and makes path.txt point at the correct executable
       function extractFile (err, zipPath) {
