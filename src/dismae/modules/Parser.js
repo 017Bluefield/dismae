@@ -189,6 +189,12 @@ window.Dismae.Parser = function (s) {
 
             statement = {type: 'play', play: play}
             statement = parseProperties(statement, tokenizedArray, 2)
+          } else if (lineArray[0] === 'stop') {
+            tokenizedArray = line.split(' ')
+            var stop = variables[tokenizedArray[1]] || tokenizedArray[1]
+
+            statement = {type: 'stop', stop: stop}
+            statement = parseProperties(statement, tokenizedArray, 2)
           } else if (lineArray[0] === 'button') {
             tokenizedArray = line.split(' ')
             var button = variables[tokenizedArray[1]] || tokenizedArray[1]

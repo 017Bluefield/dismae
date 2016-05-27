@@ -94,24 +94,24 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   hide: function hide (statement, callback) {
-    var _this = this
+    var game = this
 
     if (statement.animate) {
-      this.displayables[statement.hide].tween = this.add.tween(this.displayables[statement.hide])
-      this.displayables[statement.hide].tween.to(
+      game.displayables[statement.hide].tween = this.add.tween(game.displayables[statement.hide])
+      game.displayables[statement.hide].tween.to(
         statement.to,
         statement.over * 1000,
         window.Phaser.Easing[statement.function.name][statement.function.type]
         )
-      var sprite = statement.hide
+
       this.displayables[statement.hide].tween.start().onComplete.add(function () {
         if (callback) {
           callback()
         }
-        _this.kill(sprite)
+        game.kill(statement.hide)
       })
     } else {
-      this.kill(statement.hide)
+      game.kill(statement.hide)
     }
   },
 
@@ -144,6 +144,29 @@ window.Dismae.VisualNovel.prototype = {
     } else {
       this.wait = false
       performPlay()
+    }
+  },
+
+  stop: function stop (statement, callback) {
+    var game = this
+
+    if (statement.animate) {
+      game.playing[statement.stop].tween = game.add.tween(game.playing[statement.stop])
+      game.playing[statement.stop].tween.to(
+        statement.to,
+        statement.over * 1000,
+        window.Phaser.Easing[statement.function.name][statement.function.type]
+        )
+
+      game.playing[statement.stop].tween.start().onComplete.add(function () {
+        if (callback) {
+          callback()
+        }
+
+        game.playing[statement.stop].destroy()
+      })
+    } else {
+      game.playing[statement.stop].destroy()
     }
   },
 
@@ -191,6 +214,9 @@ window.Dismae.VisualNovel.prototype = {
         break
       case 'play':
         this.play(this.statement)
+        break
+      case 'stop':
+        this.stop(this.statement)
         break
       case 'wait':
         this.wait = true
