@@ -29,7 +29,15 @@ app.on('ready', function () {
   }
 
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: windowSize.width, height: windowSize.height, x: 0, y: 0, resizable: false, useContentSize: true})
+  mainWindow = new BrowserWindow({
+    width: windowSize.width, 
+    height: windowSize.height, 
+    x: 0, 
+    y: 0, 
+    resizable: false, 
+    useContentSize: true,
+    autoHideMenuBar: true
+  })
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/index.html') // eslint-disable-line no-path-concat
