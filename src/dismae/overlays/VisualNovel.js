@@ -49,7 +49,7 @@ window.Dismae.VisualNovel.prototype = {
     }
   },
 
-  show: function show (statement, callback) {
+  show: function show (statement) {
     var game = this
     function performShow () {
       game.assetUsageCounts[statement.show]--
@@ -74,11 +74,7 @@ window.Dismae.VisualNovel.prototype = {
           statement.over * 1000,
           window.Phaser.Easing[statement.function.name][statement.function.type]
         )
-        game.displayables[statement.show].tween.start().onComplete.add(function () {
-          if (callback) {
-            callback()
-          }
-        })
+        game.displayables[statement.show].tween.start()
       }
     }
 
@@ -96,6 +92,14 @@ window.Dismae.VisualNovel.prototype = {
   hide: function hide (statement, callback) {
     var game = this
 
+    function hideComplete () {
+      if (callback) {
+        callback()
+      }
+      this.displayables[statement.hide].tween.onComplete.remove(hideComplete, this)
+      this.kill(statement.hide)
+    }
+
     if (statement.animate) {
       game.displayables[statement.hide].tween = this.add.tween(game.displayables[statement.hide])
       game.displayables[statement.hide].tween.to(
@@ -104,12 +108,8 @@ window.Dismae.VisualNovel.prototype = {
         window.Phaser.Easing[statement.function.name][statement.function.type]
         )
 
-      this.displayables[statement.hide].tween.start().onComplete.add(function () {
-        if (callback) {
-          callback()
-        }
-        game.kill(statement.hide)
-      })
+      this.displayables[statement.hide].tween.onComplete.add(hideComplete, this)
+      this.displayables[statement.hide].tween.start()
     } else {
       game.kill(statement.hide)
     }
@@ -150,6 +150,14 @@ window.Dismae.VisualNovel.prototype = {
   stop: function stop (statement, callback) {
     var game = this
 
+    function stopComplete () {
+      if (callback) {
+        callback()
+      }
+      this.playing[statement.stop].tween.onComplete.remove(stopComplete, this)
+      this.playing[statement.stop].destroy()
+    }
+
     if (statement.animate) {
       game.playing[statement.stop].tween = game.add.tween(game.playing[statement.stop])
       game.playing[statement.stop].tween.to(
@@ -158,13 +166,8 @@ window.Dismae.VisualNovel.prototype = {
         window.Phaser.Easing[statement.function.name][statement.function.type]
         )
 
-      game.playing[statement.stop].tween.start().onComplete.add(function () {
-        if (callback) {
-          callback()
-        }
-
-        game.playing[statement.stop].destroy()
-      })
+      game.playing[statement.stop].tween.onComplete.add(stopComplete, this)
+      game.playing[statement.stop].tween.start()
     } else {
       game.playing[statement.stop].destroy()
     }
@@ -173,6 +176,7 @@ window.Dismae.VisualNovel.prototype = {
   kill: function kill (asset) {
     this.displayables[asset].kill()
 
+    console.log('kill request', asset, this.assetUsageCounts[asset])
     if (!this.assetUsageCounts[asset]) {
       this.cache.removeImage(asset, true)
       this.cacheUsed -= this.assets[asset].size
@@ -180,6 +184,7 @@ window.Dismae.VisualNovel.prototype = {
   },
 
   executeStatement: function executeStatement () {
+    var game = this
     switch (this.statement.type) {
       case 'show':
         this.show(this.statement)
@@ -188,29 +193,59 @@ window.Dismae.VisualNovel.prototype = {
         this.hide(this.statement)
         break
       case 'change':
-        var hideStatement = Object.assign({}, this.statement)
-        var showStatement = Object.assign({}, this.statement)
-        hideStatement.to = Object.assign({}, this.statement.to)
-        showStatement.to = Object.assign({}, this.statement.to)
-        hideStatement.hide = this.statement.change.from
-        hideStatement.to.x = this.displayables[this.statement.change.from].x
-        hideStatement.to.y = this.displayables[this.statement.change.from].y
-        hideStatement.to.alpha = 0
+        // if it's a change statement for an image
+        if (this.displayables[this.statement.change.from]) {
+          var hideStatement = Object.assign({}, this.statement)
+          var showStatement = Object.assign({}, this.statement)
+          hideStatement.to = Object.assign({}, this.statement.to)
+          showStatement.to = Object.assign({}, this.statement.to)
+          hideStatement.hide = this.statement.change.from
+          hideStatement.to.x = this.displayables[this.statement.change.from].x
+          hideStatement.to.y = this.displayables[this.statement.change.from].y
+          hideStatement.to.alpha = 0
 
-        if (this.backgroundLayer.getByName(this.statement.change.from)) {
-          showStatement.as = 'background'
+          if (this.backgroundLayer.getByName(this.statement.change.from)) {
+            showStatement.as = 'background'
+          }
+          showStatement.show = this.statement.change.to
+          showStatement.x = this.displayables[this.statement.change.from].x
+          showStatement.y = this.displayables[this.statement.change.from].y
+          showStatement.alpha = 0
+          showStatement.to.x = this.displayables[this.statement.change.from].x
+          showStatement.to.y = this.displayables[this.statement.change.from].y
+          showStatement.to.alpha = 1
+
+          if (this.statement.chained) {
+            this.hide(hideStatement, function () {
+              game.show(showStatement)
+            })
+          } else {
+            this.hide(hideStatement)
+            this.show(showStatement)
+          }
         }
-        showStatement.show = this.statement.change.to
-        showStatement.x = this.displayables[this.statement.change.from].x
-        showStatement.y = this.displayables[this.statement.change.from].y
-        showStatement.alpha = 0
-        showStatement.to.x = this.displayables[this.statement.change.from].x
-        showStatement.to.y = this.displayables[this.statement.change.from].y
-        showStatement.to.alpha = 1
+        // if it's a change statement for a sound
+        if (this.playing[this.statement.change.from]) {
+          var stopStatement = Object.assign({}, this.statement)
+          var playStatement = Object.assign({}, this.statement)
+          stopStatement.to = Object.assign({}, this.statement.to)
+          playStatement.to = Object.assign({}, this.statement.to)
+          stopStatement.stop = this.statement.change.from
+          stopStatement.to.volume = 0
 
-        this.hide(hideStatement)
-        this.show(showStatement)
+          playStatement.play = this.statement.change.to
+          playStatement.volume = 0
+          playStatement.to.volume = 1
 
+          if (this.statement.chained) {
+            this.stop(stopStatement, function () {
+              game.play(playStatement)
+            })
+          } else {
+            this.stop(stopStatement)
+            this.play(playStatement)
+          }
+        }
         break
       case 'play':
         this.play(this.statement)
@@ -220,7 +255,6 @@ window.Dismae.VisualNovel.prototype = {
         break
       case 'wait':
         this.wait = true
-        var game = this
         setTimeout(function () {
           game.wait = false
         }, Number(this.statement.time) * 1000)
@@ -309,10 +343,14 @@ window.Dismae.VisualNovel.prototype = {
         cacheCheck = this.cache.checkSoundKey(asset.asset)
         break
     }
-    if (cacheCheck) {
+
+    if (this.assetUsageCounts[asset.asset]) {
       this.assetUsageCounts[asset.asset]++
     } else {
       this.assetUsageCounts[asset.asset] = 1
+    }
+
+    if (!cacheCheck) {
       this.cacheUsed += this.assets[asset.asset].size
       switch (asset.type) {
         case 'image':
@@ -324,12 +362,15 @@ window.Dismae.VisualNovel.prototype = {
       }
       this.load.start()
     }
+
+    console.log('load', asset.asset, this.assetUsageCounts[asset.asset])
   },
 
   update: function () {
     if (this.nextAsset !== false && this.load.hasLoaded && this.cacheUsed < this.cacheSize) {
       this.nextAsset = this.parser.nextAsset()
       if (this.nextAsset) {
+        console.log(this.nextAsset)
         this.loadAsset(this.nextAsset)
       }
     }

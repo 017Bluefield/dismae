@@ -4,6 +4,7 @@ window.Dismae.Parser = function (s) {
   var assetCursor = 0
   var script = s.split('\n')
   var functionTypes = {'out': 'Out', 'in': 'In', 'both': 'InOut', 'none': 'None'}
+  var seenAssets = {}
 
   // return the next referenced asset for caching purposes
   function nextAsset () {
@@ -21,13 +22,19 @@ window.Dismae.Parser = function (s) {
     )
 
     if (result.statement) {
+      // note: we keep track of seen asset types for the purposes
+      // of returning the correct load command for a change statement
       if (result.statement.type === 'show') {
+        seenAssets[result.statement.show] = 'image'
         return { asset: result.statement.show, type: 'image' }
       } else if (result.statement.type === 'change') {
-        return { asset: result.statement.change.to, type: 'image' }
+        seenAssets[result.statement.change.to] = seenAssets[result.statement.change.from]
+        return { asset: result.statement.change.to, type: seenAssets[result.statement.change.from] }
       } else if (result.statement.type === 'play') {
+        seenAssets[result.statement.play] = 'audio'
         return { asset: result.statement.play, type: 'audio' }
       } else if (result.statement.type === 'button') {
+        seenAssets[result.statement.button] = 'atlas'
         return { asset: result.statement.button, atlas: result.statement.atlas, type: 'atlas' }
       }
     } else {
@@ -117,6 +124,9 @@ window.Dismae.Parser = function (s) {
           case 'linear':
             propertyIndex++
             statement.function = {name: 'Linear', type: functionTypes[propertiesArray[propertyIndex]]}
+            break
+          case 'chained':
+            statement.chained = true
             break
         }
       }
