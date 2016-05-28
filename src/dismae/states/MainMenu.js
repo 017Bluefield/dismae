@@ -6,7 +6,8 @@ window.Dismae.MainMenu = function (game) {
 
 window.Dismae.MainMenu.prototype = {
   preload: function () {
-    this.menu = new window.Dismae.Menu(this)
+    this.config = this.cache.getJSON('config')
+    this.menu = new window.Dismae.Menu(this, this.config.screens.main)
     this.menu.preload()
   },
 

@@ -1,5 +1,6 @@
-window.Dismae.Menu = function (game) {
+window.Dismae.Menu = function (game, menu) {
   this.game = game
+  this.menu = menu
   this.add = this.game.add //  used to add displayables, text, groups, etc (Phaser.GameObjectFactory)
   this.camera = this.game.camera //  a reference to the game camera (Phaser.Camera)
   this.cache = this.game.cache //  the game cache (Phaser.Cache)
@@ -42,7 +43,7 @@ window.Dismae.Menu.prototype = {
 
     this.config = this.cache.getJSON('config')
     this.assets = this.cache.getJSON('assets')
-    this.parser = this.dismae.Parser(this.cache.getText(this.config.screens.main))
+    this.parser = this.dismae.Parser(this.cache.getText(this.menu))
 
     var statement = this.parser.nextStatement()
     while (statement) {
