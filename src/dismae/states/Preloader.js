@@ -42,7 +42,7 @@ window.Dismae.Preloader.prototype = {
   },
 
   create: function () {
-    //  nce the load has finished we disable the crop because we're going to sit in the update loop for a short while as the music decodes
+    // once the load has finished, we disable the crop because we're going to sit in the update loop for a short while as the music decodes
     this.preloadBar.cropEnabled = false
   },
 
